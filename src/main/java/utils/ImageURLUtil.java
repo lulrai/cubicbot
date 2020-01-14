@@ -43,7 +43,7 @@ public class ImageURLUtil {
     public static String getImageURL(File file) {
         String imageurl = "";
         try {
-            String clientID = "50aa691a8a236fc";
+            String clientID = "CLIENT ID HERE";
             URL url = new URL("https://api.imgur.com/3/image");
             HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
             urlConn.setRequestMethod("POST");

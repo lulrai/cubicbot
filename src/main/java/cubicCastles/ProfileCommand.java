@@ -106,9 +106,6 @@ public class ProfileCommand extends Command {
                 if (!profile.isNull("DateLastActive") && !profile.getString("DateLastActive").isEmpty()) {
                     em.addField("Last Active", profile.getString("DateLastActive"), true);
                 }
-				/*if(!profile.isNull("CountUnreadConversations") && !profile.getString("CountUnreadConversations").isEmpty()) {
-					em.addField("Unread Conversations", profile.getString("CountUnreadConversations"), true);
-				}*/
                 if (!profile.isNull("CountDiscussions") && !profile.getString("CountDiscussions").isEmpty()) {
                     em.addField("Discussions", profile.getString("CountDiscussions"), true);
                 }

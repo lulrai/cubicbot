@@ -23,17 +23,6 @@ public class RestartCommand extends Command {
 
     @Override
     protected void execute(CommandEvent commandEvent) {
-        /*if(!commandEvent.getGuild().getId().equals("365932526297939971") && !commandEvent.getMember().hasPermission(Permission.ADMINISTRATOR)){
-            return;
-        }*/
-//        else {
-//            if (!(commandEvent.getGuild().getId().equals("365932526297939971") && UserPermission.isAdmin(commandEvent, commandEvent.getAuthor()))) {
-//                return;
-//            }
-//        }
-
-
-
         Msg.reply(commandEvent, "Restarting..");
 
         if(AutoUpdatingStatus.m != null)
