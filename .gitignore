@@ -21,3 +21,17 @@
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+/.classpath
+/.idea/$PRODUCT_WORKSPACE_FILE$
+/.idea/.gitignore
+/.project
+/db/global/client_secret.json
+/db/global/prices.xlsx
+/.idea/
+/.settings/
+/backup/
+/bin/
+/MySQL/
+/target/
+/CCBot.iml
+/cubic-bot.iml
