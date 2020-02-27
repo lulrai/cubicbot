@@ -44,7 +44,6 @@ public class CraftCommand extends Command {
     }
 
     private static Boolean checkStrings(String str1, String str2) {
-        //else return str1.toLowerCase().startsWith(str2.toLowerCase());
         if (str1.equalsIgnoreCase(str2)) {
             return true;
         } else return str1.replaceAll("[^A-Za-z0-9 ]", "").equalsIgnoreCase(str2);
@@ -105,11 +104,7 @@ public class CraftCommand extends Command {
                     em.setDescription(imgCache.get(key).getDesc());
                     File file = imgCache.get(key).getImage();
                     em.setImage("attachment://db/cache/"+URLEncoder.encode(file.getName(),"utf-8"));
-                    //msg.editMessage(em.build()).queue();
-                    //message.setEmbed(em.build());
                     msg.delete();
-                    //channel.sendMessage(message.build()).queue();
-                    //channel.sendFile(file, URLEncoder.encode(file.getName(),"utf-8")).queue();
                     channel.sendFile(file, URLEncoder.encode(file.getName(),"utf-8")).embed(em.build()).queue();
                     return;
                 }
@@ -125,7 +120,6 @@ public class CraftCommand extends Command {
                 Elements itemDiv = doc.select("div#CONTAINER > div.HIDE_CONTAINER");
                 for (int i = 4; i < itemDiv.size() - 1; i++) {
                     Elements itemList = itemDiv.get(i).select("tr");
-                    System.out.println(itemList.html());
                     for (Element element : itemList) {
                         Elements td = element.select("td");
                         if (checkSimilarStrings(td.get(td.size() - 1).text().trim(), givenName)) {
@@ -180,7 +174,6 @@ public class CraftCommand extends Command {
 
                                 found = true;
                                 break;
-                                //System.out.println(itemName+"\n"+itemDesc+"\n"+itemType+"\n"+itemImage);
                             }
                     }
                 }
@@ -206,11 +199,9 @@ public class CraftCommand extends Command {
                     Item item = new Item(itemName, itemType, itemDesc, f);
                     imgCache.put(itemName.trim(), item);
                     channel.sendFile(f, URLEncoder.encode(f.getName(),"utf-8")).embed(em.build()).queue();
-                    //channel.sendMessage(message.build()).queue();
                     return;
                 }
             }
-            //itemImage.clear();
             msg.editMessage(em.build()).queue();
         } catch (Exception e) {
             ExceptionHandler.handleException(event, e, "CraftCommand.java");
