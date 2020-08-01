@@ -37,7 +37,8 @@ public class WarningCommand extends Command {
             Msg.bad(event, "USAGE" + ": " + Constants.D_PREFIX + "warn <@user> [reason]");
             return;
         }
-        if (event.getMessage().getMentionedUsers().isEmpty() || event.getMessage().getMentionedUsers() == null) {
+        event.getMessage().getMentionedUsers();
+        if (event.getMessage().getMentionedUsers().isEmpty()) {
             ErrorHandling.EMPTY_MENTION_ERROR.error(event);
             return;
         }
