@@ -39,7 +39,7 @@ public class AuctionSet extends Command {
             }
             br.close();
         } catch (IOException e) {
-            ExceptionHandler.handleException(event, e, "AuctionSet.java");
+            ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "AuctionSet.java");
         }
         return channelID;
     }
@@ -93,7 +93,7 @@ public class AuctionSet extends Command {
             file.delete();
             temp.renameTo(file);
         } catch (IOException e) {
-            ExceptionHandler.handleException(event, e, "AuctionSet.java");
+            ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "AuctionSet.java");
             return false;
         }
         return true;
