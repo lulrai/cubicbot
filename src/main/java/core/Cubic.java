@@ -17,6 +17,7 @@ import net.dv8tion.jda.api.*;
 import net.dv8tion.jda.api.entities.Activity;
 import normalCommands.ImgurCommand;
 import cubicCastles.OldPriceCommand;
+import org.apache.log4j.BasicConfigurator;
 import utils.Constants;
 
 import javax.security.auth.login.LoginException;
@@ -34,6 +35,8 @@ import java.util.logging.Logger;
 public class Cubic {
     private static JDA jda;
     public static void main(String[] args) throws LoginException, IllegalArgumentException, InterruptedException {
+        BasicConfigurator.configure();
+
         EventWaiter waiter = new EventWaiter();
         jda = new JDABuilder(AccountType.BOT)
                 //.setToken(Constants.BOT_RELEASE_CODE)
