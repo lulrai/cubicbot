@@ -18,6 +18,7 @@ public class UserPermission {
     public static boolean isAdmin(CommandEvent event, User u) {
         List<String> admins = new ArrayList<>(Arrays.asList("bot admin", "admin", "administrator"));
         Member m = event.getGuild().getMember(u);
+        if(m == null) return false;
         boolean isAdmin = false;
         for (Role role : m.getRoles()) {
             if (admins.contains(role.getName().toLowerCase())) {
@@ -30,6 +31,7 @@ public class UserPermission {
     public static boolean isMod(CommandEvent event, User u) {
         List<String> mods = new ArrayList<>(Arrays.asList("bot mod", "mod", "moderator", "discord moderator"));
         Member m = event.getGuild().getMember(u);
+        if(m == null) return false;
         boolean isMod = false;
         for (Role role : m.getRoles()) {
             if (mods.contains(role.getName().toLowerCase())) {

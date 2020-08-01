@@ -86,14 +86,14 @@ public class WarningCommand extends Command {
             em.addField("Reason", args[1], false);
         }
 
-        String chanId = ModLogSet.getModLogChannel(event);
+        String chanId = ModLogSet.getModLogChannel(event.getGuild());
         if (!chanId.isEmpty()) {
             TextChannel tc = event.getJDA().getTextChannelById(chanId);
             if(tc != null){
                 tc.sendMessage(em.build()).queue();
             }
             else{
-                ModLogSet.removeModLog(event, chanId);
+                ModLogSet.removeModLog(event.getGuild(), chanId);
             }
         }
     }

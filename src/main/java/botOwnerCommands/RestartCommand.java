@@ -57,7 +57,7 @@ public class RestartCommand extends Command {
             builder.start();
             //System.out.println(builder.command());
         } catch (IOException e) {
-            ExceptionHandler.handleException(commandEvent, e, "RestartCommand.java");
+            ExceptionHandler.handleException(e, commandEvent.getMessage().getContentRaw(), "RestartCommand.java");
         }
 
         Msg.reply(commandEvent, "Restarted successfully.");

@@ -70,6 +70,11 @@ public class CacheUtils {
                 url[0] = "https://forums2.cubiccastles.com/index.php?p=/categories/events-contests";
                 url[1] = "30";
             }
+            case "newprice": {
+                url[0] = "https://forums2.cubiccastles.com/index.php?p=/discussion/27821/cubic-castles-prices/p1";
+                url[1] = "1440";
+                break;
+            }
         }
         return url;
     }

@@ -135,12 +135,6 @@ public class ProfileCommand extends Command {
     }
 
     private static URI uriWithPort(URI uri) {
-//        try {
-//            return new URI(uri.getScheme(), uri.getUserInfo(), uri.getHost(), 80,
-//                    uri.getPath(), uri.getQuery(), uri.getFragment());
-//        } catch (URISyntaxException e) {
-//            return uri;
-//        }
         return uri;
     }
 

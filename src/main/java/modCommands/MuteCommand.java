@@ -13,6 +13,7 @@ import utils.*;
 import java.util.HashMap;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -72,7 +73,7 @@ public class MuteCommand extends Command {
             String successful = "";
 
 
-            if (member.getVoiceState().inVoiceChannel()) {
+            if (member.getVoiceState() != null && member.getVoiceState().inVoiceChannel()) {
                 try {
                     event.getGuild().deafen(member, true).queue();
                     event.getGuild().mute(member, true).queue();
@@ -86,7 +87,7 @@ public class MuteCommand extends Command {
                 for (TextChannel chan : event.getGuild().getTextChannels()) {
                     final Consumer<Throwable> throwableConsumer = t -> Msg.bad(event, "Failed to mute the user.");
                     if (chan.getPermissionOverride(member) != null) {
-                        chan.getPermissionOverride(member).getManager().deny(Permission.MESSAGE_WRITE).queue(v -> {
+                        Objects.requireNonNull(chan.getPermissionOverride(member)).getManager().deny(Permission.MESSAGE_WRITE).queue(v -> {
                         }, throwableConsumer);
                     } else {
                         chan.createPermissionOverride(member).setDeny(Permission.MESSAGE_WRITE).queue(v -> {
@@ -96,7 +97,7 @@ public class MuteCommand extends Command {
 
                 if (unmuteTime != 0) {
                     Map<Member, ScheduledFuture<?>> mp = new HashMap<>();
-                    mp.put(member, unmute(event, unmuteTime));
+                    mp.put(member, unmute(member, event.getMessage().getMember(), event.getGuild(), event.getTextChannel(), unmuteTime));
                     isMuted.put(event.getGuild(), mp);
                     Msg.reply(event, "@" + event.getMessage().getMentionedUsers().get(0).getName() + " " + "has been muted" + successful + " for " + ConversionUtils.secondsToTime(unmuteTime) + ".");
                 } else {
@@ -107,12 +108,12 @@ public class MuteCommand extends Command {
                 Msg.bad(event, "The bot doesn't have necessary permission to mute the user. Requires Manage Channel permission.");
             }
         } catch (Exception e) {
-            ExceptionHandler.handleException(event, e, "MuteCommand.java");
+            ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "MuteCommand.java");
         }
     }
 
-    private ScheduledFuture<?> unmute(CommandEvent event, int unmuteTime) {
+    private ScheduledFuture<?> unmute(Member toMember, Member fromMember, Guild guild, TextChannel textChannel, int unmuteTime) {
         ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(2);
-        return exec.schedule(() -> new UnmuteCommand().execute(event), unmuteTime, TimeUnit.SECONDS);
+        return exec.schedule(() -> UnmuteCommand.unmute(toMember, fromMember, guild, textChannel), unmuteTime, TimeUnit.SECONDS);
     }
 }

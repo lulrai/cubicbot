@@ -21,6 +21,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+@Deprecated
 public class AutoUpdatingStatus {
     public static Message m;
     public static void check(JDA jda) {

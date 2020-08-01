@@ -88,7 +88,7 @@ public class StaffListCommand extends Command {
         } catch (InsufficientPermissionException ex) {
             event.getTextChannel().sendMessage(ex.getMessage()).queue();
         } catch (Exception e) {
-            ExceptionHandler.handleException(event, e, "StaffListCommand.java");
+            ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "StaffListCommand.java");
         }
     }
 

@@ -24,7 +24,6 @@ public enum ErrorHandling {
             }
             case EMPTY_MENTION_ERROR: {
                 Msg.bad(event, "Please mention who you would like to perform this command on.");
-                return;
             }
         }
     }

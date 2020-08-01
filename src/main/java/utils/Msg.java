@@ -2,6 +2,7 @@ package utils;
 
 import com.jagrosh.jdautilities.command.CommandEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 import java.awt.*;
@@ -23,6 +24,13 @@ public class Msg {
         event.getTextChannel().sendMessage(em.build()).queue();
     }
 
+    public static void reply(TextChannel mutedChannel, String message) {
+        EmbedBuilder em = new EmbedBuilder();
+        em.setColor(Color.CYAN);
+        em.setDescription(message);
+        mutedChannel.sendMessage(em.build()).queue();
+    }
+
     public static void bad(MessageReceivedEvent event, String message) {
         EmbedBuilder em = new EmbedBuilder();
         em.setColor(Color.RED);
@@ -35,6 +43,13 @@ public class Msg {
         em.setColor(Color.RED);
         em.setDescription(message);
         event.getTextChannel().sendMessage(em.build()).queue();
+    }
+
+    public static void bad(TextChannel mutedChannel, String message) {
+        EmbedBuilder em = new EmbedBuilder();
+        em.setColor(Color.RED);
+        em.setDescription(message);
+        mutedChannel.sendMessage(em.build()).queue();
     }
 
     public static void replyTimed(CommandEvent event, String message, int timeTillDeletion, TimeUnit timeType) {
@@ -58,22 +73,14 @@ public class Msg {
     public static void normalTimedMessage(CommandEvent event, String message, int timeTillDeletion, TimeUnit timeType) {
         event.getTextChannel().sendMessage(message).queue(m -> {
             ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(20);
-            exec.schedule(new Runnable() {
-                public void run() {
-                    m.delete().queue();
-                }
-            }, timeTillDeletion, timeType);
+            exec.schedule(() -> m.delete().queue(), timeTillDeletion, timeType);
         });
     }
 
     public static void embedTimedMessage(CommandEvent event, EmbedBuilder embed, int timeTillDeletion, TimeUnit timeType) {
         event.getTextChannel().sendMessage(embed.build()).queue(m -> {
             ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(20);
-            exec.schedule(new Runnable() {
-                public void run() {
-                    m.delete().queue();
-                }
-            }, timeTillDeletion, timeType);
+            exec.schedule(() -> m.delete().queue(), timeTillDeletion, timeType);
         });
     }
 }

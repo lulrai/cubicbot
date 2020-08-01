@@ -43,7 +43,7 @@ public class ImageURLUtil {
     public static String getImageURL(File file) {
         String imageurl = "";
         try {
-            String clientID = "CLIENT ID HERE";
+            String clientID = "50aa691a8a236fc";
             URL url = new URL("https://api.imgur.com/3/image");
             HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
             urlConn.setRequestMethod("POST");
@@ -52,7 +52,7 @@ public class ImageURLUtil {
             urlConn.connect();
 
             //Encode image to data
-            BufferedImage image = null;
+            BufferedImage image;
             //read image
             image = ImageIO.read(file);
             ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
@@ -79,6 +79,7 @@ public class ImageURLUtil {
             each.close();
             urlConn.disconnect();
         } catch (Exception e) {
+            e.printStackTrace();
         }
         return imageurl;
     }

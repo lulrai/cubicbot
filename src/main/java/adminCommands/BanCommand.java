@@ -7,6 +7,7 @@ import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.api.exceptions.PermissionException;
@@ -34,10 +35,10 @@ public class BanCommand extends Command {
     @Override
     protected void execute(CommandEvent event) {
         if (event.getArgs().length() < 1) {
-            Msg.bad(event, "USAGE" + ": " + Constants.D_PREFIX + "ban <@user> <time(s)>");
+            Msg.bad(event, "USAGE" + ": " + Constants.D_PREFIX + "ban <@user> [time(s)]");
             return;
         }
-        if (event.getMessage().getMentionedUsers().isEmpty() || event.getMessage().getMentionedUsers() == null) {
+        if (event.getMessage().getMentionedUsers() == null || event.getMessage().getMentionedUsers().isEmpty()) {
             ErrorHandling.EMPTY_MENTION_ERROR.error(event);
             return;
         }
@@ -82,7 +83,7 @@ public class BanCommand extends Command {
                             try {
                                 e.getGuild().ban(target, 7).queue((v) -> {
                                     if (unBan != 0) {
-                                        isBanned.put(target, unban(event, unBan));
+                                        isBanned.put(target, unban(event.getGuild().getMember(target), event.getMember(), event.getGuild(), event.getTextChannel(), unBan, event.getMessage().getContentRaw()));
                                         Msg.reply(event, "@" + event.getMessage().getMentionedUsers().get(0).getName() + " " + "has been banned for " + ConversionUtils.secondsToTime(unBan) + ".");
                                     } else {
                                         Msg.reply(event, "@" + event.getMessage().getMentionedUsers().get(0).getName() + " " + "has been banned.");
@@ -95,7 +96,7 @@ public class BanCommand extends Command {
                                 Msg.bad(event, "The bot doesn't have necessary permission to ban the user.");
                             }
                         } catch (Exception ex) {
-                            ExceptionHandler.handleException(event, ex, "BanCommand.java");
+                            ExceptionHandler.handleException(ex, event.getMessage().getContentRaw(), "BanCommand.java");
                         }
                     } else if (message.equalsIgnoreCase("no") || message.equalsIgnoreCase("cancel")) {
                         Msg.bad(event, "User was NOT banned.");
@@ -106,11 +107,11 @@ public class BanCommand extends Command {
                 10, TimeUnit.SECONDS, () -> event.reply("Sorry, you took too long."));
     }
 
-    private ScheduledFuture<?> unban(CommandEvent event, int unmuteTime) {
+    private ScheduledFuture<?> unban(Member toMember, Member fromMember, Guild guild, TextChannel channel, int unbanTime, String command) {
         ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(2);
         return exec.schedule(() -> {
-            new UnbanCommand().execute(event);
-            Logger.logInChannel(event, "unban", unmuteTime);
-        }, unmuteTime, TimeUnit.SECONDS);
+            UnbanCommand.unban(toMember, guild, channel, command);
+            Logger.logInChannel(toMember, fromMember, guild, "unban", unbanTime);
+        }, unbanTime, TimeUnit.SECONDS);
     }
 }

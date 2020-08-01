@@ -4,12 +4,14 @@ import botOwnerCommands.ExceptionHandler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.PermissionOverride;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.exceptions.PermissionException;
 import utils.*;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class UnmuteCommand extends Command {
@@ -49,46 +51,48 @@ public class UnmuteCommand extends Command {
             return;
         }
         try {
-            Member member = event.getGuild().getMember(event.getMessage().getMentionedUsers().get(0));
-            String successful = "";
+            unmute(m, event.getMessage().getMember(), event.getGuild(), event.getTextChannel());
+        } catch (Exception e) {
+            ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "UnmuteCommand.java");
+        }
+    }
 
+    public static void unmute(Member toMember, Member fromMember, Guild guild, TextChannel mutedChannel) {
+        String successful = "";
 
-            if (member.getVoiceState().inVoiceChannel()) {
-                try {
-                    event.getGuild().deafen(member, false).complete();
-                    event.getGuild().mute(member, false).complete();
-                    successful = " both on text chat and voice chat";
-                } catch (PermissionException e) {
-                    successful = " but the bot doesn't have necessary permission to unmute the user on Voice Chat";
-                }
-            }
-            final String success = successful;
+        if (toMember.getVoiceState() != null && toMember.getVoiceState().inVoiceChannel()) {
             try {
-                for (TextChannel chan : event.getGuild().getTextChannels()) {
-                    PermissionOverride pr;
-                    if ((pr = chan.getPermissionOverride(member)) != null) {
-                        final Consumer<Throwable> throwableConsumer = t -> Msg.bad(event, "Failed to unmute the user.");
-                        if ((pr.getAllowed().size() + pr.getDenied().size()) > 1 && pr.getDenied().size() > 1) {
-                            if (pr.getDenied().contains(Permission.MESSAGE_WRITE)) {
-                                event.getTextChannel().getPermissionOverride(member).getManager().clear(Permission.MESSAGE_WRITE).queue(v -> {
-                                }, throwableConsumer);
-                            }
-                        } else {
-                            chan.getPermissionOverride(member).delete().queue(v -> {
+                guild.deafen(toMember, false).complete();
+                guild.mute(toMember, false).complete();
+                successful = " both on text chat and voice chat";
+            } catch (PermissionException e) {
+                successful = " but the bot doesn't have necessary permission to unmute the user on Voice Chat";
+            }
+        }
+        final String success = successful;
+        try {
+            for (TextChannel chan : guild.getTextChannels()) {
+                PermissionOverride pr;
+                if ((pr = chan.getPermissionOverride(toMember)) != null) {
+                    final Consumer<Throwable> throwableConsumer = t -> Msg.bad(mutedChannel, "Failed to unmute the user.");
+                    if ((pr.getAllowed().size() + pr.getDenied().size()) > 1 && pr.getDenied().size() > 1) {
+                        if (pr.getDenied().contains(Permission.MESSAGE_WRITE)) {
+                            Objects.requireNonNull(mutedChannel.getPermissionOverride(toMember)).getManager().clear(Permission.MESSAGE_WRITE).queue(v -> {
                             }, throwableConsumer);
                         }
+                    } else {
+                        Objects.requireNonNull(chan.getPermissionOverride(toMember)).delete().queue(v -> {
+                        }, throwableConsumer);
                     }
                 }
-                if (MuteCommand.isMuted.get(event.getGuild()).get(member) != null) {
-                    MuteCommand.isMuted.get(event.getGuild()).get(member).cancel(true);
-                }
-                Logger.logInChannel(event, "unmute", 0);
-                Msg.reply(event, "@" + event.getMessage().getMentionedUsers().get(0).getName() + " " + "has been unmuted" + success + ".");
-            } catch (PermissionException e) {
-                Msg.bad(event, "The bot doesn't have necessary permission to mute the user. Requires Manage Channel permission.");
             }
-        } catch (Exception e) {
-            ExceptionHandler.handleException(event, e, "UnmuteCommand.java");
+            if (MuteCommand.isMuted.get(guild).get(toMember) != null) {
+                MuteCommand.isMuted.get(guild).get(toMember).cancel(true);
+            }
+            Logger.logInChannel(toMember, fromMember, guild, "unmute", 0);
+            Msg.reply(mutedChannel, "@" + toMember.getUser().getName() + " " + "has been unmuted" + success + ".");
+        } catch (PermissionException e) {
+            Msg.bad(mutedChannel, "The bot doesn't have necessary permission to mute the user. Requires Manage Channel permission.");
         }
     }
 }

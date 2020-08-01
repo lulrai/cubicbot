@@ -204,7 +204,7 @@ public class CraftCommand extends Command {
             }
             msg.editMessage(em.build()).queue();
         } catch (Exception e) {
-            ExceptionHandler.handleException(event, e, "CraftCommand.java");
+            ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "CraftCommand.java");
         }
     }
 

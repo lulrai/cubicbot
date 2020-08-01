@@ -3,6 +3,7 @@ package adminCommands;
 import botOwnerCommands.ExceptionHandler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import net.dv8tion.jda.api.entities.Guild;
 import utils.Msg;
 
 import java.io.*;
@@ -19,10 +20,10 @@ public class ModLogSet extends Command {
         this.ownerCommand = false;
     }
 
-    public static String getModLogChannel(CommandEvent event) {
+    public static String getModLogChannel(Guild guild) {
         String channelID = "";
         Path workingDir = Paths.get(System.getProperty("user.dir"));
-        File guildDir = new File(workingDir.resolve("db/servers/" + event.getGuild().getId()).toUri());
+        File guildDir = new File(workingDir.resolve("db/servers/" + guild.getId()).toUri());
         guildDir.mkdirs();
         try {
             File outFile = new File(guildDir, "settings.txt");
@@ -38,14 +39,14 @@ public class ModLogSet extends Command {
             }
             br.close();
         } catch (Exception e1) {
-            ExceptionHandler.handleException(event, e1, "ModLogSet.java");
+            e1.printStackTrace();
         }
         return channelID;
     }
 
-    public static void removeModLog(CommandEvent event, String channelID){
+    public static void removeModLog(Guild guild, String channelID){
         Path workingDir = Paths.get(System.getProperty("user.dir"));
-        File guildDir = new File(workingDir.resolve("db/servers/" + event.getGuild().getId()).toUri());
+        File guildDir = new File(workingDir.resolve("db/servers/" + guild.getId()).toUri());
         guildDir.mkdirs();
         try {
             File file = new File(guildDir, "settings.txt");
@@ -70,13 +71,13 @@ public class ModLogSet extends Command {
             file.delete();
             temp.renameTo(file);
         } catch (Exception e) {
-            ExceptionHandler.handleException(event, e, "ModLogSet.java");
+            e.printStackTrace();
         }
     }
 
     @Override
     protected void execute(CommandEvent event) {
-        if (getModLogChannel(event).isEmpty()) {
+        if (getModLogChannel(event.getGuild()).isEmpty()) {
             if (setModLogChannel(event, false)) {
                 Msg.reply(event, "This channel has been set as a moderator log channel.");
             } else {
@@ -123,7 +124,7 @@ public class ModLogSet extends Command {
             file.delete();
             temp.renameTo(file);
         } catch (Exception e) {
-            ExceptionHandler.handleException(event, e, "ModLogSet.java");
+            ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "ModLogSet.java");
             return false;
         }
         return true;

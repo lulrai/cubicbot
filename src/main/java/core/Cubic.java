@@ -16,8 +16,7 @@ import modCommands.*;
 import net.dv8tion.jda.api.*;
 import net.dv8tion.jda.api.entities.Activity;
 import normalCommands.ImgurCommand;
-import cubicCastles.PriceCommand;
-import cubicCastles.PricePack;
+import cubicCastles.OldPriceCommand;
 import utils.Constants;
 
 import javax.security.auth.login.LoginException;
@@ -33,33 +32,30 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Cubic {
-
+    private static JDA jda;
     public static void main(String[] args) throws LoginException, IllegalArgumentException, InterruptedException {
         EventWaiter waiter = new EventWaiter();
-        JDA jda = new JDABuilder(AccountType.BOT)
-                .setToken(Constants.CLIENT_SECRET_CODE)
+        jda = new JDABuilder(AccountType.BOT)
+                //.setToken(Constants.BOT_RELEASE_CODE)
+                .setToken(Constants.BOT_TEST_CODE)
                 .addEventListeners(commandClient(waiter).build(),waiter)
                 .setStatus(OnlineStatus.DO_NOT_DISTURB).build();
         jda.setAutoReconnect(true);
         jda.getPresence().setActivity(Activity.watching("Cubic Castles!"));
         Logger.getLogger("org.apache.http.client.protocol.ResponseProcessCookies").setLevel(Level.OFF);
         jda.awaitStatus(JDA.Status.CONNECTED);
-        //AutoEvent.runUpdates(jda);
-        /*hile(jda.getStatus().compareTo(JDA.Status.CONNECTED) != 0){
-            jda.awaitReady();
-        }*/
+
         autoClearCache();
 
         //Help Command
         HelpCommand.addToHelp();
-
-        //AutoUpdatingStatus.check(jda);
     }
 
     private static void autoClearCache() {
         try {
             ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(10);
             scheduler.scheduleAtFixedRate(() -> {
+                PriceCommand.populatePrices();
                 for (Item i :CraftCommand.imgCache.values()) {
                     i.getImage().delete();
                 }
@@ -135,11 +131,15 @@ public class Cubic {
                         new ModLogSet(),
 
                         //Prices
-                        new PriceCommand(),
-                        new PricePack()
+                        new OldPriceCommand(),
+                        new PriceCommand()
 
                         //Tests
                 );
         return client;
+    }
+
+    public static JDA getJDA() {
+        return jda;
     }
 }

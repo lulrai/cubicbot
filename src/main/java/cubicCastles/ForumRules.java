@@ -56,7 +56,7 @@ public class ForumRules extends Command {
         } catch (InsufficientPermissionException ex) {
             event.getTextChannel().sendMessage(ex.getMessage()).queue();
         } catch (Exception e) {
-            ExceptionHandler.handleException(event, e, "ForumRules.java");
+            ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "ForumRules.java");
         }
     }
 

@@ -49,7 +49,7 @@ public class GameRules extends Command {
         } catch (InsufficientPermissionException ex) {
             event.getTextChannel().sendMessage(ex.getMessage()).queue();
         } catch (Exception e) {
-            ExceptionHandler.handleException(event, e, "GameRules.java");
+            ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "GameRules.java");
         }
     }
 }

@@ -45,7 +45,7 @@ public class RaffleCommand extends Command {
         } catch (InsufficientPermissionException ex) {
             event.getTextChannel().sendMessage(ex.getMessage()).queue();
         } catch (Exception e) {
-            ExceptionHandler.handleException(event, e, "RaffleCommand.java");
+            ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "RaffleCommand.java");
         }
     }
 

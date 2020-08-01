@@ -6,6 +6,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.exceptions.PermissionException;
 import utils.Constants;
@@ -44,19 +45,20 @@ public class UnbanCommand extends Command {
             Msg.bad(event, "The bot doesn't have required permissions to perform this command. Missing Permission(s): " + ex.getPermission());
             return;
         }
+        unban(event.getGuild().getMember(target), event.getGuild(), event.getTextChannel(), event.getMessage().getContentRaw());
+    }
 
+    public static void unban(Member toMember, Guild guild, TextChannel channel, String command) {
         try {
             try {
-                event.getGuild().unban(target).queue((v) -> {
-                    Msg.reply(event, "@" + event.getMessage().getMentionedUsers().get(0).getName() + " " + "has been unbanned.");
-                }, (t) -> {
-                    Msg.bad(event, "Failed to unban the user.");
-                });
-            } catch (PermissionException ex) {
-                Msg.bad(event, "The bot doesn't have necessary permission to mute the user. Requires Administrator permission.");
+                guild.unban(toMember.getUser()).queue(v -> Msg.reply(channel, "@" + toMember.getUser().getName() + " has been unbanned."), t -> Msg.bad(channel, "Failed to unban the user."));
             }
-        } catch (Exception e) {
-            ExceptionHandler.handleException(event, e, "UnbanCommand.java");
+            catch (PermissionException ex) {
+                Msg.bad(channel, "The bot doesn't have necessary permission to mute the user. Requires Administrator permission.");
+            }
+        }
+        catch (Exception e) {
+            ExceptionHandler.handleException(e, command, "UnbanCommand.java");
         }
     }
 
