@@ -3,7 +3,6 @@ package normalCommands;
 import botOwnerCommands.ExceptionHandler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import javafx.util.Pair;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
@@ -14,7 +13,6 @@ import org.jsoup.select.Elements;
 import utils.CacheUtils;
 import utils.Constants;
 import utils.Msg;
-import utils.UserPermission;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -158,39 +156,39 @@ public class GenerateBingo extends Command {
         BufferedImage background = ImageIO.read(new File(guildDir, "topslot.png"));
         Graphics backG = background.getGraphics();
 
-        ArrayList<Pair<Integer, Integer>> dimensions = new ArrayList<>();
-        dimensions.add(new Pair<>(20,275));    // 1
-        dimensions.add(new Pair<>(265,275));    // 2
-        dimensions.add(new Pair<>(510,275));    // 3
-        dimensions.add(new Pair<>(755,275));    // 4
-        dimensions.add(new Pair<>(1000,275));    // 5
+        ArrayList<Integer[]> dimensions = new ArrayList<>();
+        dimensions.add(new Integer[]{20,275});    // 1
+        dimensions.add(new Integer[]{265,275});    // 2
+        dimensions.add(new Integer[]{510,275});    // 3
+        dimensions.add(new Integer[]{755,275});    // 4
+        dimensions.add(new Integer[]{1000,275});    // 5
 
-        dimensions.add(new Pair<>(20,520));    // 6
-        dimensions.add(new Pair<>(265,520));    // 7
-        dimensions.add(new Pair<>(510,520));    // 8
-        dimensions.add(new Pair<>(755,520));    // 9
-        dimensions.add(new Pair<>(1000,520));    // 10
+        dimensions.add(new Integer[]{20,520});    // 6
+        dimensions.add(new Integer[]{265,520});    // 7
+        dimensions.add(new Integer[]{510,520});    // 8
+        dimensions.add(new Integer[]{755,520});    // 9
+        dimensions.add(new Integer[]{1000,520});    // 10
 
-        dimensions.add(new Pair<>(20,765));    // 11
-        dimensions.add(new Pair<>(265,765));    // 12
-        dimensions.add(new Pair<>(510,765));    // 13 (Special)
-        dimensions.add(new Pair<>(755,765));    // 14
-        dimensions.add(new Pair<>(1000,765));    // 15
+        dimensions.add(new Integer[]{20,765});    // 11
+        dimensions.add(new Integer[]{265,765});    // 12
+        dimensions.add(new Integer[]{510,765});    // 13 (Special)
+        dimensions.add(new Integer[]{755,765});    // 14
+        dimensions.add(new Integer[]{1000,765});    // 15
 
-        dimensions.add(new Pair<>(20,1010));    // 16
-        dimensions.add(new Pair<>(265,1010));    // 17
-        dimensions.add(new Pair<>(510,1010));    // 18
-        dimensions.add(new Pair<>(755,1010));    // 19
-        dimensions.add(new Pair<>(1000,1010));    // 20
+        dimensions.add(new Integer[]{20,1010});    // 16
+        dimensions.add(new Integer[]{265,1010});    // 17
+        dimensions.add(new Integer[]{510,1010});    // 18
+        dimensions.add(new Integer[]{755,1010});    // 19
+        dimensions.add(new Integer[]{1000,1010});    // 20
 
-        dimensions.add(new Pair<>(20,1255));    // 21
-        dimensions.add(new Pair<>(265,1255));    // 22
-        dimensions.add(new Pair<>(510,1255));    // 23
-        dimensions.add(new Pair<>(755,1255));    // 24
-        dimensions.add(new Pair<>(1000,1255));    // 25
+        dimensions.add(new Integer[]{20,1255});    // 21
+        dimensions.add(new Integer[]{265,1255});    // 22
+        dimensions.add(new Integer[]{510,1255});    // 23
+        dimensions.add(new Integer[]{755,1255});    // 24
+        dimensions.add(new Integer[]{1000,1255});    // 25
 
         for(int i = 0; i < images.size(); i++){
-            backG.drawImage(images.get(i), dimensions.get(i).getKey(), dimensions.get(i).getValue(), null);
+            backG.drawImage(images.get(i), dimensions.get(i)[0], dimensions.get(i)[1], null);
         }
 
         images.clear();
