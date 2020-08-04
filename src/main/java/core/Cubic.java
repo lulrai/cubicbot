@@ -36,20 +36,24 @@ import java.util.concurrent.TimeUnit;
 public class Cubic {
     private static JDA jda;
 
-    public static void main(String[] args) throws LoginException, IllegalArgumentException, InterruptedException {
+    public static void main(String[] args) {
         BasicConfigurator.configure();
         //Logger.getRootLogger().setLevel(Level.ERROR);
 
         EventWaiter waiter = new EventWaiter();
-        jda = new JDABuilder(AccountType.BOT)
-                .setToken(Constants.BOT_RELEASE_CODE)
+        try {
+            jda = new JDABuilder(AccountType.BOT)
+                    .setToken(Constants.BOT_RELEASE_CODE)
 //                .setToken(Constants.BOT_TEST_CODE)
-                .addEventListeners(commandClient(waiter).build(),waiter)
-                .setStatus(OnlineStatus.DO_NOT_DISTURB).build();
-        jda.setAutoReconnect(true);
-        jda.getPresence().setActivity(Activity.watching("Cubic Castles!"));
-        Logger.getLogger("org.apache.http.client.protocol.ResponseProcessCookies").setLevel(Level.OFF);
-        jda.awaitStatus(JDA.Status.CONNECTED);
+                    .addEventListeners(commandClient(waiter).build(), waiter)
+                    .setStatus(OnlineStatus.DO_NOT_DISTURB).build();
+            jda.setAutoReconnect(true);
+            jda.getPresence().setActivity(Activity.watching("Cubic Castles!"));
+            Logger.getLogger("org.apache.http.client.protocol.ResponseProcessCookies").setLevel(Level.OFF);
+            jda.awaitStatus(JDA.Status.CONNECTED);
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
 
         autoClearCache();
 
