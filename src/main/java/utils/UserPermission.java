@@ -25,7 +25,7 @@ public class UserPermission {
                 isAdmin = true;
             }
         }
-        return !m.hasPermission(Permission.ADMINISTRATOR) && !isAdmin && !m.isOwner();
+        return m.hasPermission(Permission.ADMINISTRATOR) || isAdmin || m.isOwner();
     }
 
     public static boolean isMod(CommandEvent event, User u) {

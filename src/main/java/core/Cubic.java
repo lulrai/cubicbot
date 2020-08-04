@@ -15,9 +15,12 @@ import information.HelpCommand;
 import modCommands.*;
 import net.dv8tion.jda.api.*;
 import net.dv8tion.jda.api.entities.Activity;
+import normalCommands.GenerateBingo;
 import normalCommands.ImgurCommand;
 import cubicCastles.OldPriceCommand;
 import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import utils.Constants;
 
 import javax.security.auth.login.LoginException;
@@ -29,18 +32,18 @@ import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Cubic {
     private static JDA jda;
+
     public static void main(String[] args) throws LoginException, IllegalArgumentException, InterruptedException {
         BasicConfigurator.configure();
+        //Logger.getRootLogger().setLevel(Level.ERROR);
 
         EventWaiter waiter = new EventWaiter();
         jda = new JDABuilder(AccountType.BOT)
-                //.setToken(Constants.BOT_RELEASE_CODE)
-                .setToken(Constants.BOT_TEST_CODE)
+                .setToken(Constants.BOT_RELEASE_CODE)
+//                .setToken(Constants.BOT_TEST_CODE)
                 .addEventListeners(commandClient(waiter).build(),waiter)
                 .setStatus(OnlineStatus.DO_NOT_DISTURB).build();
         jda.setAutoReconnect(true);
@@ -49,6 +52,9 @@ public class Cubic {
         jda.awaitStatus(JDA.Status.CONNECTED);
 
         autoClearCache();
+
+        // Initialize bingo cards
+        GenerateBingo.initializeBingoCards();
 
         //Help Command
         HelpCommand.addToHelp();
@@ -105,6 +111,7 @@ public class Cubic {
 
                         //Normal
                         new ImgurCommand(),
+                        new GenerateBingo(),
 
                         //Cubic Castles
                         new CraftCommand(),
@@ -132,6 +139,7 @@ public class Cubic {
                         new UnbanCommand(),
                         new AuctionSet(),
                         new ModLogSet(),
+                        new BingoCommand(),
 
                         //Prices
                         new OldPriceCommand(),

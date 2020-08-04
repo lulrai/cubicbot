@@ -22,7 +22,7 @@ public class CacheUtils {
                 break;
             }
             case "item": {
-                url[0] = "https://cubiccastles.com/recipe_html/recipes.html";
+                url[0] = "https://www.cubiccastles.com/recipe_html/recipes.html";
                 url[1] = "5000";
                 break;
             }
