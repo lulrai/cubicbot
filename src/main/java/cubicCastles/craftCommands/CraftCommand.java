@@ -3,6 +3,7 @@ package cubicCastles.craftCommands;
 import botOwnerCommands.ExceptionHandler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import core.Cubic;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -94,7 +95,6 @@ public class CraftCommand extends Command {
 
             Document doc = Jsoup.parse(CacheUtils.getCache("craft"));
 
-
             boolean found = false;
             for (String key : imgCache.keySet()) {
                 if (checkStrings(key, givenName)) {
@@ -161,13 +161,13 @@ public class CraftCommand extends Command {
 
                                     String ingrUsed = td.select("span").first().text();
                                     String process = td.select("center").first().text();
-                                    List<BufferedImage> itemImages = new ArrayList<BufferedImage>();
+                                    List<BufferedImage> itemImages = new ArrayList<>();
                                     List<BufferedImage> itemMult = initList();
-                                    List<String> words = new ArrayList<String>();
+                                    List<String> words = new ArrayList<>();
 
                                     words.add(ingrUsed);
-                                    words.add(process);
                                     itemName = getString(basePicURL, guildDir, td, itemImages, itemMult, words);
+                                    words.add(process);
                                     itemImage.add(CraftImageUtil.getCompleted(1, itemImages, itemMult, words, itemType, itemName));
                                     itemDesc = "How to Craft " + itemName;
                                 }
@@ -183,26 +183,30 @@ public class CraftCommand extends Command {
                     } else {
                         em.setDescription("Item Not Found. Did you mean any of these?\n\n" + suggestions);
                     }
+                    msg.editMessage(em.build()).queue();
                 } else {
                     em.addField("Item Name", itemName, true);
                     em.addField("Craft Type", itemType, true);
                     em.setDescription(itemDesc);
+
                     File f = itemImage.get(0);
-                    em.setImage("attachment://db/cache/"+URLEncoder.encode(f.getName(),"utf-8"));
-                    msg.delete();
-                    if (itemImage.size() > 1) {
-                        for (int i = 1; i < itemImage.size(); i++) {
-                            otherWays.append(itemImage.get(i)).append("\n");
-                        }
-                        em.addField("Other Ways", otherWays.toString(), true);
-                    }
+                    Message image = Cubic.getJDA().getTextChannelById("740309750369091796").sendFile(f, URLEncoder.encode(f.getName(),"utf-8")).complete();
+
+                    em.setImage(image.getAttachments().get(0).getUrl());
+                    //em.setImage("attachment://db/cache/"+URLEncoder.encode(f.getName(),"utf-8"));
+                    //msg.delete().queue();
+//                    if (itemImage.size() > 1) {
+//                        for (int i = 1; i < itemImage.size(); i++) {
+//                            otherWays.append(itemImage.get(i)).append("\n");
+//                        }
+//                        em.addField("Other Ways", otherWays.toString(), true);
+//                    }
                     Item item = new Item(itemName, itemType, itemDesc, f);
                     imgCache.put(itemName.trim(), item);
-                    channel.sendFile(f, URLEncoder.encode(f.getName(),"utf-8")).embed(em.build()).queue();
-                    return;
+                    msg.editMessage(em.build()).queue();
+//                    event.getChannel().sendFile(f, URLEncoder.encode(f.getName(),"utf-8")).embed(em.build()).queue();
                 }
             }
-            msg.editMessage(em.build()).queue();
         } catch (Exception e) {
             ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "CraftCommand.java");
         }

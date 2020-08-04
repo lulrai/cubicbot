@@ -68,12 +68,21 @@ public class PriceCommand extends Command
                     if (checkSimilarStrings(item, givenItem)) {
                         suggestions.append("- ").append(item.trim()).append("\n");
                     }
-                    if (event.getMessage().getMentionedMembers().size() > 0 && event.getMessage().getMentionedMembers().get(0).getUser().getId().equals("169122787099672577")) {
-                        em.setTitle("Absolutely Priceless");
-                        em.setColor(Color.GREEN);
-                        em.setDescription("I love you a lot, and you're priceless. So, suck it.");
-                        msg.editMessage(em.build()).queue();
-                        return;
+                    if (event.getMessage().getAuthor().getId().equals("169122787099672577") || event.getMessage().getAuthor().getId().equals("222488511385698304")){
+                        if (event.getMessage().getMentionedMembers().size() > 0 && event.getMessage().getMentionedMembers().get(0).getUser().getId().equals("169122787099672577")) {
+                            em.setTitle("Absolutely Priceless");
+                            em.setColor(Color.GREEN);
+                            em.setDescription("I love you a lot, and you're priceless. So, suck it.");
+                            msg.editMessage(em.build()).queue();
+                            return;
+                        }
+                        else if (event.getMessage().getMentionedMembers().size() > 0 && event.getMessage().getMentionedMembers().get(0).getUser().getId().equals("222488511385698304")) {
+                            em.setTitle("Less Priceless");
+                            em.setColor(Color.GREEN);
+                            em.setDescription("I love you a lot too, and you're priceless too. But less priceless than I am, suck it.");
+                            msg.editMessage(em.build()).queue();
+                            return;
+                        }
                     }
                     if (checkStrings(item, givenItem)) {
                         em.setTitle(item + "'s Price");
@@ -224,7 +233,7 @@ public class PriceCommand extends Command
     }
 
     static {
-        PriceCommand.priceMap = new HashMap<String, Integer[]>();
+        PriceCommand.priceMap = new HashMap<>();
         PriceCommand.recentUpdate = "";
     }
 }
