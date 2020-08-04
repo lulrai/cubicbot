@@ -36,8 +36,8 @@ hs_err_pid*
 /CCBot.iml
 /cubic-bot.iml
 !/src/main/java/utils/ReadWriteExcelFile.java
-!/src/main/java/utils/Constants.java
 db/cards/
 db/global/bingoboard.jpg
 db/global/ccbingo.png
 db/global/test.png
+/src/main/java/utils/Constants.java
