@@ -17,7 +17,7 @@ public class CacheUtils {
         String[] url = new String[2];
         switch (type.toLowerCase()) {
             case "craft": {
-                url[0] = "https://cubiccastles.com/recipe_html/recipes.html";
+                url[0] = "https://www.cubiccastles.com/recipe_html/recipes.html";
                 url[1] = "4500";
                 break;
             }

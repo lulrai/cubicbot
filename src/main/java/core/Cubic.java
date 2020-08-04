@@ -40,6 +40,9 @@ public class Cubic {
         BasicConfigurator.configure();
         //Logger.getRootLogger().setLevel(Level.ERROR);
 
+        // Initialize bingo cards
+        GenerateBingo.initializeBingoCards();
+
         EventWaiter waiter = new EventWaiter();
         jda = new JDABuilder(AccountType.BOT)
                 .setToken(Constants.BOT_RELEASE_CODE)
@@ -52,9 +55,6 @@ public class Cubic {
         jda.awaitStatus(JDA.Status.CONNECTED);
 
         autoClearCache();
-
-        // Initialize bingo cards
-        GenerateBingo.initializeBingoCards();
 
         //Help Command
         HelpCommand.addToHelp();

@@ -51,18 +51,18 @@ public class StatusCommand extends Command {
             String[] text = Jsoup.parse(div.html().replace("<br>", "break")).text().split("break");
             List<String> str = Arrays.stream(text).map(s-> {
                 if(s.length() >= 15) return s;
-                return "";
+                return null;
             }).collect(Collectors.toList());
             for(String s : str){
-                if(!s.isEmpty()) {
+                if(s != null && !s.isEmpty()) {
                     String[] split = s.trim().split(" ", 4);
                     int serverNum = 0;
                     int player = 0;
                     try{
-                        player = Integer.parseInt(split[3].replaceAll("[^\\d]", ""));
-                        serverNum = Integer.parseInt(split[1].substring(split[1].length()-3).replaceAll("[^\\d]", ""));
+                        player = Integer.parseInt(split[2].replaceAll("[^\\d]", ""));
+                        serverNum = Integer.parseInt(split[0].substring(split[0].length()-3).replaceAll("[^\\d]", ""));
                     }catch (NumberFormatException ignored){}
-                    serverStats.add(String.format("%s %02d %s %s %s", "Server", (serverNum >= 1000 ? serverNum - 1000 : serverNum), ":", split[2], (split[2].trim().equalsIgnoreCase("down!") ? " (Down for "+ ConversionUtils.secondsToTime(player) + ")" : "")));
+                    serverStats.add(String.format("%s %02d %s %s %s", "Server", (serverNum >= 1000 ? serverNum - 1000 : serverNum), ":", split[1], (split[2].trim().equalsIgnoreCase("down!") ? " (Down for "+ ConversionUtils.secondsToTime(player) + ")" : "")));
                 }
             }
 
@@ -94,6 +94,7 @@ public class StatusCommand extends Command {
         } catch (InsufficientPermissionException ex) {
             event.getTextChannel().sendMessage(ex.getMessage()).queue();
         } catch (Exception e) {
+//            e.printStackTrace();
             ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "StatusCommand.java");
         }
     }
