@@ -1,4 +1,4 @@
-package adminCommands;
+package normalCommands;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;

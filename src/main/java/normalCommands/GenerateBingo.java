@@ -3,6 +3,7 @@ package normalCommands;
 import botOwnerCommands.ExceptionHandler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 public class GenerateBingo extends Command {
     public static Map<String, BufferedImage> bingoBoard = new HashMap<>();
@@ -35,7 +37,7 @@ public class GenerateBingo extends Command {
         this.aliases = new String[]{"gencard", "generatebingo"};
         this.category = new Category("Normal");
         this.ownerCommand = false;
-        this.cooldown = 5;
+        this.cooldown = 30;
     }
 
     @Override
@@ -81,8 +83,20 @@ public class GenerateBingo extends Command {
             ImageIO.write(board, "png", os);                          // Passing: ​(RenderedImage im, String formatName, OutputStream output)
             InputStream is = new ByteArrayInputStream(os.toByteArray());
 
-            m.editMessage("Generated. Here is your card.").queue();
-            event.getTextChannel().sendFile(is, "bingoboard.png").queue();
+            m.delete().queue();
+//            m.editMessage("Generated. Attempting to DM the bingo card..").queue();
+
+            Message mssg = event.getTextChannel().sendMessage(user.getAsMention()+"'s Bingo Card.").addFile(is, "bingoboard.png").complete();
+
+            user.openPrivateChannel().queue(c -> {
+                EmbedBuilder em = new EmbedBuilder();
+                em.setTitle("BINGO card");
+                em.setColor(Color.ORANGE);
+                em.setImage(mssg.getAttachments().get(0).getUrl());
+                em.setFooter("Request assistance with admin, if you have any issues.");
+                c.sendMessage(em.build()).queue();
+                Msg.replyTimed(event, "Successfully DM'ed the card.", 5, TimeUnit.SECONDS);
+            }, n -> Msg.replyTimed(event, "Could not send a DM. Please manually save the following card or retrieve it later using `\"+Constants.D_PREFIX+\"card` command.", 5, TimeUnit.SECONDS));
 
             bingoBoard.put(user.getId(), board);
             addCard(user.getId(), board);

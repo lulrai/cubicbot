@@ -87,7 +87,6 @@ public class CraftCommand extends Command {
             String itemName = "";
             List<File> itemImage = new ArrayList<>();
             String itemDesc = "";
-            StringBuilder otherWays = new StringBuilder();
             em.setTitle(title);
             em.setColor(Color.CYAN);
 
@@ -208,7 +207,8 @@ public class CraftCommand extends Command {
                 }
             }
         } catch (Exception e) {
-            ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "CraftCommand.java");
+            e.printStackTrace();
+//            ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "CraftCommand.java");
         }
     }
 

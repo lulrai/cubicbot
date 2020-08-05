@@ -160,7 +160,7 @@ class CraftImageUtil {
             backG.dispose();
         } else if (itemType.equalsIgnoreCase("Crafting Recipes with Tools")) {
 
-            orgBack = getBackground(numCards - 1, "layout1");
+            orgBack = getBackground(numCards - 1, "layout2");
 
             final int[] cardPos1 = {13, 10};
             final int[] cardPos2 = {158, 10};

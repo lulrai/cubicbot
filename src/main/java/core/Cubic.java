@@ -15,9 +15,11 @@ import information.HelpCommand;
 import modCommands.*;
 import net.dv8tion.jda.api.*;
 import net.dv8tion.jda.api.entities.Activity;
+import normalCommands.BingoCommand;
 import normalCommands.GenerateBingo;
 import normalCommands.ImgurCommand;
 import cubicCastles.OldPriceCommand;
+import normalCommands.RollCommand;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -45,8 +47,8 @@ public class Cubic {
 
         EventWaiter waiter = new EventWaiter();
         jda = new JDABuilder(AccountType.BOT)
-                .setToken(Constants.BOT_RELEASE_CODE)
-//                .setToken(Constants.BOT_TEST_CODE)
+//                .setToken(Constants.BOT_RELEASE_CODE)
+                .setToken(Constants.BOT_TEST_CODE)
                 .addEventListeners(commandClient(waiter).build(),waiter)
                 .setStatus(OnlineStatus.DO_NOT_DISTURB).build();
         jda.setAutoReconnect(true);
@@ -126,6 +128,7 @@ public class Cubic {
                         new ForumRules(),
                         new GameRules(),
                         new NewsCommand(),
+                        new RollCommand(),
 
                         //Moderation
                         new ClearCommand(),
