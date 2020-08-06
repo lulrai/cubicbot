@@ -3,6 +3,10 @@ package normalCommands;
 import botOwnerCommands.ExceptionHandler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
+import com.jagrosh.jdautilities.menu.ButtonMenu;
+import com.vdurmont.emoji.EmojiManager;
+import com.vdurmont.emoji.EmojiParser;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
@@ -31,13 +35,14 @@ import java.util.concurrent.TimeUnit;
 
 public class GenerateBingo extends Command {
     public static Map<String, BufferedImage> bingoBoard = new HashMap<>();
+    private EventWaiter waiter;
 
-    public GenerateBingo() {
+    public GenerateBingo(EventWaiter waiter) {
         this.name = "cgen";
         this.aliases = new String[]{"gencard", "generatebingo"};
         this.category = new Category("Normal");
         this.ownerCommand = false;
-        this.cooldown = 30;
+        this.waiter = waiter;
     }
 
     @Override
@@ -48,16 +53,50 @@ public class GenerateBingo extends Command {
                 event.getAuthor().getId().equals("169122787099672577") || event.getAuthor().getId().equals("222488511385698304") || event.getAuthor().getId().equals("195621535703105536"))
                 && !event.getMessage().getMentionedUsers().isEmpty()) {
                 user = event.getMessage().getMentionedUsers().get(0);
+                if(bingoBoard.get(user.getId()) != null){
+                    new ButtonMenu.Builder()
+                            .setDescription("There is a card for this user already. Are you sure you want to (re)generate another?")
+                            .setChoices(EmojiManager.getForAlias("white_check_mark").getUnicode())
+                            .addChoice(EmojiManager.getForAlias("x").getUnicode())
+                            .setEventWaiter(waiter)
+                            .setTimeout(20, TimeUnit.SECONDS)
+                            .setColor(Color.orange)
+                            .setAction(v -> {
+                                if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":x:")) {
+                                    Msg.replyTimed(event, "Cancelled (re)generating bingo card.", 5, TimeUnit.SECONDS);
+                                }
+                                else if(EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":white_check_mark:")){
+                                    Message m = event.getTextChannel().sendMessage("Generating card... Please wait.").complete();
+                                    generateCard(event, m, event.getMessage().getMentionedUsers().get(0));
+                                }
+                            })
+                            .setFinalAction(me -> {
+                                me.delete().queue();
+                            }).build().display(event.getTextChannel());
+                }
+                else{
+                    Message m = event.getTextChannel().sendMessage("Generating card... Please wait.").complete();
+                    generateCard(event, m, event.getMessage().getMentionedUsers().get(0));
+                }
         }
         else{
+            return;
+            /*
             user = event.getAuthor();
             if(bingoBoard.get(user.getId()) != null){
                 Msg.reply(event,"You already have a bingo card. You cannot make another! Ask the admins or Snowy to create another. But here is your card.\n\n" +
                         "To check your card, use: `"+ Constants.D_PREFIX +"card` command.");
                 return;
             }
+            Message m = event.getTextChannel().sendMessage("Generating card... Please wait.").complete();
+            generateCard(event, m, event.getAuthor());*/
         }
-        Message m = event.getTextChannel().sendMessage("Generating card... Please wait.").complete();
+
+    }
+
+    private void generateCard(CommandEvent event, Message m, User user){
+        this.cooldown = 30;
+        this.cooldownScope = CooldownScope.GLOBAL;
         try{
             String basePicURL = "http://cubiccastles.com/recipe_html/";
 
@@ -84,9 +123,11 @@ public class GenerateBingo extends Command {
             InputStream is = new ByteArrayInputStream(os.toByteArray());
 
             m.delete().queue();
-//            m.editMessage("Generated. Attempting to DM the bingo card..").queue();
 
             Message mssg = event.getTextChannel().sendMessage(user.getAsMention()+"'s Bingo Card.").addFile(is, "bingoboard.png").complete();
+
+            bingoBoard.put(user.getId(), board);
+            addCard(user.getId(), board);
 
             user.openPrivateChannel().queue(c -> {
                 EmbedBuilder em = new EmbedBuilder();
@@ -97,9 +138,6 @@ public class GenerateBingo extends Command {
                 c.sendMessage(em.build()).queue();
                 Msg.replyTimed(event, "Successfully DM'ed the card.", 5, TimeUnit.SECONDS);
             }, n -> Msg.replyTimed(event, "Could not send a DM. Please manually save the following card or retrieve it later using `\"+Constants.D_PREFIX+\"card` command.", 5, TimeUnit.SECONDS));
-
-            bingoBoard.put(user.getId(), board);
-            addCard(user.getId(), board);
 
             itemImages.clear();
             is.close();
@@ -112,7 +150,7 @@ public class GenerateBingo extends Command {
 
     private void addCard(String id, BufferedImage board) throws IOException {
         Path workingDir = Paths.get(System.getProperty("user.dir"));
-        File cacheDir = new File(workingDir.resolve("db/cards/").toUri());
+        File cacheDir = new File(workingDir.resolve("db/cards/bingocards/").toUri());
         if (!cacheDir.exists()) {
             cacheDir.mkdirs();
         }
@@ -125,7 +163,6 @@ public class GenerateBingo extends Command {
         ArrayList<BufferedImage> cards = new ArrayList<>();
         Path workingDir = Paths.get(System.getProperty("user.dir"));
         File guildDir = new File(workingDir.resolve("db/global").toUri());
-
 
         for(int i = 0; i < itemImages.size(); i++){
             BufferedImage bingoSlot = ImageIO.read(new File(guildDir, "bingoslot.png"));
@@ -205,8 +242,10 @@ public class GenerateBingo extends Command {
             backG.drawImage(images.get(i), dimensions.get(i)[0], dimensions.get(i)[1], null);
         }
 
+        for(BufferedImage img : images){
+            img.flush();
+        }
         images.clear();
-
         backG.dispose();
         return background;
     }
@@ -240,13 +279,13 @@ public class GenerateBingo extends Command {
     }
 
     public static void initializeBingoCards(){
-        String[] args = new File(System.getProperty("user.dir")+"/db/cards").list();
+        String[] args = new File(System.getProperty("user.dir")+"/db/cards/bingocards").list();
         if(args == null){
             return;
         }
         for (String arg : args) {
             try {
-                BufferedImage bf = ImageIO.read(new File(System.getProperty("user.dir") + "/db/cards/" + arg));
+                BufferedImage bf = ImageIO.read(new File(System.getProperty("user.dir") + "/db/cards/bingocards/" + arg));
                 bingoBoard.put(arg.replaceAll("[^0-9]", ""), bf);
             } catch (IOException e) {
                 e.printStackTrace();

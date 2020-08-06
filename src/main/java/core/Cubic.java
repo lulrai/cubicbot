@@ -44,11 +44,12 @@ public class Cubic {
 
         // Initialize bingo cards
         GenerateBingo.initializeBingoCards();
+        RollCommand.initializeChosenCache();
 
         EventWaiter waiter = new EventWaiter();
         jda = new JDABuilder(AccountType.BOT)
-//                .setToken(Constants.BOT_RELEASE_CODE)
-                .setToken(Constants.BOT_TEST_CODE)
+                .setToken(Constants.BOT_RELEASE_CODE)
+//                .setToken(Constants.BOT_TEST_CODE)
                 .addEventListeners(commandClient(waiter).build(),waiter)
                 .setStatus(OnlineStatus.DO_NOT_DISTURB).build();
         jda.setAutoReconnect(true);
@@ -113,7 +114,7 @@ public class Cubic {
 
                         //Normal
                         new ImgurCommand(),
-                        new GenerateBingo(),
+                        new GenerateBingo(waiter),
 
                         //Cubic Castles
                         new CraftCommand(),

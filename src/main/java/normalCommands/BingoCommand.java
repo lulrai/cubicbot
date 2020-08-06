@@ -3,7 +3,6 @@ package normalCommands;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import net.dv8tion.jda.api.Permission;
-import normalCommands.GenerateBingo;
 import utils.Constants;
 import utils.Msg;
 
@@ -32,7 +31,7 @@ public class BingoCommand extends Command {
                 ByteArrayOutputStream os = new ByteArrayOutputStream();
                 try {
                     if(!GenerateBingo.bingoBoard.containsKey(event.getMessage().getMentionedUsers().get(0).getId())){
-                        Msg.reply(event, event.getMessage().getMentionedMembers().get(0).getAsMention()+" doesn't have a bingo card. Please generate one using `"+ Constants.D_PREFIX +"cgen <@user>` command.");
+                        Msg.reply(event, event.getMessage().getMentionedMembers().get(0).getAsMention()+" doesn't have a bingo card.");
                         return;
                     }
                     ImageIO.write(GenerateBingo.bingoBoard.get(event.getMessage().getMentionedUsers().get(0).getId()), "png", os);
@@ -49,7 +48,7 @@ public class BingoCommand extends Command {
             else if(event.getArgs().trim().equalsIgnoreCase("clear")){
                 GenerateBingo.bingoBoard.clear();
                 Path workingDir = Paths.get(System.getProperty("user.dir"));
-                File guildDir = new File(workingDir.resolve("db/cards").toUri());
+                File guildDir = new File(workingDir.resolve("db/cards/bingocards").toUri());
                 if(guildDir.exists()) {
                     for (File f : guildDir.listFiles()) {
                         f.delete();
@@ -60,7 +59,7 @@ public class BingoCommand extends Command {
         }
         else{
             if(!GenerateBingo.bingoBoard.containsKey(event.getAuthor().getId())){
-                Msg.reply(event, event.getMember().getAsMention()+", you don't have a bingo card. Please generate one using `"+ Constants.D_PREFIX +"cgen` command.");
+                Msg.reply(event, event.getMember().getAsMention()+", you don't have a bingo card. Please ask `snowy` or `WhimsicalFirefly` to generate one.");
                 return;
             }
             ByteArrayOutputStream os = new ByteArrayOutputStream();
