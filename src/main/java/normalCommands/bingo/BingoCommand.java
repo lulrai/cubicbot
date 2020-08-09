@@ -1,9 +1,8 @@
-package normalCommands;
+package normalCommands.bingo;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import net.dv8tion.jda.api.Permission;
-import utils.Constants;
 import utils.Msg;
 
 import javax.imageio.ImageIO;
@@ -34,7 +33,7 @@ public class BingoCommand extends Command {
                         Msg.reply(event, event.getMessage().getMentionedMembers().get(0).getAsMention()+" doesn't have a bingo card.");
                         return;
                     }
-                    ImageIO.write(GenerateBingo.bingoBoard.get(event.getMessage().getMentionedUsers().get(0).getId()), "png", os);
+                    ImageIO.write(GenerateBingo.bingoBoard.get(event.getMessage().getMentionedUsers().get(0).getId()).getValue(), "png", os);
 
                     InputStream is = new ByteArrayInputStream(os.toByteArray());
 
@@ -64,7 +63,7 @@ public class BingoCommand extends Command {
             }
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             try {
-                ImageIO.write(GenerateBingo.bingoBoard.get(event.getAuthor().getId()), "png", os);
+                ImageIO.write(GenerateBingo.bingoBoard.get(event.getAuthor().getId()).getValue(), "png", os);
 
                 InputStream is = new ByteArrayInputStream(os.toByteArray());
 

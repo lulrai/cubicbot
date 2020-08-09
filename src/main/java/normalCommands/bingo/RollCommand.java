@@ -1,4 +1,4 @@
-package normalCommands;
+package normalCommands.bingo;
 
 import botOwnerCommands.ExceptionHandler;
 import com.jagrosh.jdautilities.command.Command;
@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class RollCommand extends Command {
-    private static ArrayList<String> chosenImages = new ArrayList<>();
+    public static ArrayList<String> chosenImages = new ArrayList<>();
 
     public RollCommand() {
         this.name = "roll";

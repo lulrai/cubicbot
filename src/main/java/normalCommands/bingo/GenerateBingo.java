@@ -1,4 +1,4 @@
-package normalCommands;
+package normalCommands.bingo;
 
 import botOwnerCommands.ExceptionHandler;
 import com.jagrosh.jdautilities.command.Command;
@@ -27,14 +27,12 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
 public class GenerateBingo extends Command {
-    public static Map<String, BufferedImage> bingoBoard = new HashMap<>();
+    public static Map<String, Map.Entry<String[][], BufferedImage>> bingoBoard = new HashMap<>();
     private EventWaiter waiter;
 
     public GenerateBingo(EventWaiter waiter) {
@@ -74,14 +72,12 @@ public class GenerateBingo extends Command {
                                 me.delete().queue();
                             }).build().display(event.getTextChannel());
                 }
-                else{
+                else {
                     Message m = event.getTextChannel().sendMessage("Generating card... Please wait.").complete();
                     generateCard(event, m, event.getMessage().getMentionedUsers().get(0));
                 }
         }
         else{
-            return;
-            /*
             user = event.getAuthor();
             if(bingoBoard.get(user.getId()) != null){
                 Msg.reply(event,"You already have a bingo card. You cannot make another! Ask the admins or Snowy to create another. But here is your card.\n\n" +
@@ -89,12 +85,12 @@ public class GenerateBingo extends Command {
                 return;
             }
             Message m = event.getTextChannel().sendMessage("Generating card... Please wait.").complete();
-            generateCard(event, m, event.getAuthor());*/
+            generateCard(event, m, event.getAuthor());
         }
 
     }
 
-    private void generateCard(CommandEvent event, Message m, User user){
+    private void generateCard(CommandEvent event, Message m, User user) {
         this.cooldown = 30;
         this.cooldownScope = CooldownScope.GLOBAL;
         try{
@@ -105,6 +101,7 @@ public class GenerateBingo extends Command {
             Elements itemDiv = doc.select("div#CONTAINER > div.HIDE_CONTAINER");
 
             ArrayList<String> itemImages = new ArrayList<>();
+            ArrayList<String> itemNames = new ArrayList<>();
             Element itemList = itemDiv.get(2);
             while(itemImages.size() < 24){
                 Random rand = new Random();
@@ -112,14 +109,16 @@ public class GenerateBingo extends Command {
                 String u = basePicURL + item.select("img").attr("src");
                 if(!itemImages.contains(u)){
                     itemImages.add(u);
+                    itemNames.add(item.text());
                 }
             }
 
             itemImages.add(12, "placeHolder");
+            itemNames.add(12, "Free");
 
-            BufferedImage board = generateBoard(itemImages);
+            Entry<String[][], BufferedImage> board = generateBoard(itemImages, itemNames);
             ByteArrayOutputStream os = new ByteArrayOutputStream();
-            ImageIO.write(board, "png", os);                          // Passing: ​(RenderedImage im, String formatName, OutputStream output)
+            ImageIO.write(board.getValue(), "png", os);                          // Passing: ​(RenderedImage im, String formatName, OutputStream output)
             InputStream is = new ByteArrayInputStream(os.toByteArray());
 
             m.delete().queue();
@@ -134,7 +133,7 @@ public class GenerateBingo extends Command {
                 em.setTitle("BINGO card");
                 em.setColor(Color.ORANGE);
                 em.setImage(mssg.getAttachments().get(0).getUrl());
-                em.setFooter("Request assistance with admin, if you have any issues.");
+                em.setFooter("Request assistance with `snowy` or `WhimsicalFirefly`, if you have any issues.");
                 c.sendMessage(em.build()).queue();
                 Msg.replyTimed(event, "Successfully DM'ed the card.", 5, TimeUnit.SECONDS);
             }, n -> Msg.replyTimed(event, "Could not send a DM. Please manually save the following card or retrieve it later using `\"+Constants.D_PREFIX+\"card` command.", 5, TimeUnit.SECONDS));
@@ -148,32 +147,67 @@ public class GenerateBingo extends Command {
         }
     }
 
-    private void addCard(String id, BufferedImage board) throws IOException {
+    private void addCard(String id, Entry<String[][], BufferedImage> board) throws IOException {
         Path workingDir = Paths.get(System.getProperty("user.dir"));
-        File cacheDir = new File(workingDir.resolve("db/cards/bingocards/").toUri());
-        if (!cacheDir.exists()) {
-            cacheDir.mkdirs();
+        File cardDir = new File(workingDir.resolve("db/cards/bingocards/").toUri());
+        File markedCardDir = new File(workingDir.resolve("db/cards/markedbingocards/").toUri());
+        if (!cardDir.exists()) cardDir.mkdirs();
+        if (!markedCardDir.exists()) markedCardDir.mkdirs();
+
+        File outputImgOrig = new File(cardDir, URLEncoder.encode(id + ".png", "utf-8"));
+        File outputImgMark = new File(markedCardDir, URLEncoder.encode(id + ".png", "utf-8"));
+
+        ImageIO.write(board.getValue(), "png", outputImgOrig);
+        ImageIO.write(board.getValue(), "png", outputImgMark);
+
+        File outputFileOrig = new File(cardDir, URLEncoder.encode(id + ".txt", "utf-8"));
+        try {
+            outputFileOrig.createNewFile();
+        } catch (IOException e) {
+            System.out.println("Couldn't create " + outputFileOrig.getName() + " file at " + outputFileOrig.getAbsolutePath());
         }
-        File outputfile = new File(cacheDir, URLEncoder.encode(id + ".png", "utf-8"));
-        ImageIO.write(board, "png", outputfile);
+
+        FileWriter fw = new FileWriter(outputFileOrig, false);
+        BufferedWriter bw = new BufferedWriter(fw);
+        PrintWriter out = new PrintWriter(bw);
+        for (int i = 0; i < board.getKey().length; i++) {
+            for(int j = 0; j < board.getKey()[0].length; j++) {
+                out.println(board.getKey()[i][j]);
+            }
+        }
+        out.close();
+        bw.close();
+        fw.close();
     }
 
 
-    private ArrayList<BufferedImage> generateCards(ArrayList<String> itemImages) throws IOException {
+    private Entry<String[][], ArrayList<BufferedImage>> generateCards(ArrayList<String> itemImages, ArrayList<String> itemNames) throws IOException {
         ArrayList<BufferedImage> cards = new ArrayList<>();
+        String[][] names = new String[5][5];
+
         Path workingDir = Paths.get(System.getProperty("user.dir"));
         File guildDir = new File(workingDir.resolve("db/global").toUri());
 
-        for(int i = 0; i < itemImages.size(); i++){
+        int row = 0;
+        int col = 0;
+        for(int i = 0; i < itemImages.size(); i++) {
             BufferedImage bingoSlot = ImageIO.read(new File(guildDir, "bingoslot.png"));
             Graphics backG = bingoSlot.getGraphics();
             if(i == 12) {
                 BufferedImage free = ImageIO.read(new File(guildDir, "free.png"));
+                names[2][2] = "Free";
+                col++;
                 Dimension dim = getScaledDimension(new Dimension(free.getWidth(), free.getHeight()), new Dimension(bingoSlot.getWidth(), bingoSlot.getHeight()));
                 backG.drawImage(free.getScaledInstance((int)dim.getWidth(), (int)dim.getHeight(), Image.SCALE_SMOOTH), 2, 2, null);
                 free.flush();
             }
             else {
+                names[row][col] = itemNames.get(i);
+                if(col == 4){
+                    row++;
+                    col = -1;
+                }
+                col++;
 //                BufferedImage image = ImageIO.read(new File(guildDir, "test.png"));
                 URL url = new URL(itemImages.get(i));
                 BufferedImage image = ImageIO.read(url);
@@ -195,11 +229,11 @@ public class GenerateBingo extends Command {
             cards.add(bingoSlot);
             backG.dispose();
         }
-        return cards;
+        return new AbstractMap.SimpleEntry<>(names, cards);
     }
 
-    private BufferedImage generateBoard(ArrayList<String> itemImages) throws IOException {
-        ArrayList<BufferedImage> images = generateCards(itemImages);
+    private Entry<String[][], BufferedImage> generateBoard(ArrayList<String> itemImages, ArrayList<String> itemNames) throws IOException {
+        Entry<String[][], ArrayList<BufferedImage>> images = generateCards(itemImages, itemNames);
 
         Path workingDir = Paths.get(System.getProperty("user.dir"));
         File guildDir = new File(workingDir.resolve("db/global").toUri());
@@ -238,19 +272,19 @@ public class GenerateBingo extends Command {
         dimensions.add(new Integer[]{755,1255});    // 24
         dimensions.add(new Integer[]{1000,1255});    // 25
 
-        for(int i = 0; i < images.size(); i++){
-            backG.drawImage(images.get(i), dimensions.get(i)[0], dimensions.get(i)[1], null);
+        for(int i = 0; i < images.getValue().size(); i++){
+            backG.drawImage(images.getValue().get(i), dimensions.get(i)[0], dimensions.get(i)[1], null);
         }
 
-        for(BufferedImage img : images){
+        for(BufferedImage img : images.getValue()){
             img.flush();
         }
-        images.clear();
+        images.getValue().clear();
         backG.dispose();
-        return background;
+        return new AbstractMap.SimpleEntry<>(images.getKey(), background);
     }
 
-    private static Dimension getScaledDimension(Dimension imgSize, Dimension boundary) {
+    public static Dimension getScaledDimension(Dimension imgSize, Dimension boundary) {
 
         int original_width = imgSize.width;
         int original_height = imgSize.height;
@@ -279,16 +313,51 @@ public class GenerateBingo extends Command {
     }
 
     public static void initializeBingoCards(){
-        String[] args = new File(System.getProperty("user.dir")+"/db/cards/bingocards").list();
-        if(args == null){
+        String[] bingoOrig = new File(System.getProperty("user.dir")+"/db/cards/bingocards").list();
+        String[] bingoMark = new File(System.getProperty("user.dir")+"/db/cards/markedbingocards").list();
+        if(bingoMark == null || bingoOrig == null){
             return;
         }
-        for (String arg : args) {
-            try {
-                BufferedImage bf = ImageIO.read(new File(System.getProperty("user.dir") + "/db/cards/bingocards/" + arg));
-                bingoBoard.put(arg.replaceAll("[^0-9]", ""), bf);
-            } catch (IOException e) {
-                e.printStackTrace();
+        for (String arg : bingoMark) {
+            BufferedImage card = null;
+            String[][] items = new String[5][5];
+            if(arg.endsWith(".png")) {
+                try {
+                    card = ImageIO.read(new File(System.getProperty("user.dir") + "/db/cards/markedbingocards/" + arg));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                File outFile = new File(System.getProperty("user.dir")+"/db/cards/bingocards/", arg.replaceAll("[^0-9]", "").trim() + ".txt");
+                if(!outFile.exists()) continue;
+
+                try {
+                    BufferedReader br = new BufferedReader(new FileReader(outFile));
+                    String line;
+                    int i = 0;
+                    int j = 0;
+                    while ((line = br.readLine()) != null) {
+                        if(j % 4 == 0 && j != 0) {
+                            items[i][j] = line;
+                            i++;
+                            j = 0;
+                        }
+                        else {
+                            if (i == 2 && j == 2) {
+                                items[i][j] = "Free";
+                            } else {
+                                items[i][j] = line;
+                            }
+                            j++;
+                        }
+                    }
+                    br.close();
+                } catch (Exception e1) {
+                    e1.printStackTrace();
+                }
+            }
+            if(card != null && items[0][0] != null) {
+                Entry<String[][], BufferedImage> e = new AbstractMap.SimpleEntry<>(items, card);
+                bingoBoard.put(arg.replaceAll("[^0-9]", ""), e);
             }
         }
     }

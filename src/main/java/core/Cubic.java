@@ -15,11 +15,9 @@ import information.HelpCommand;
 import modCommands.*;
 import net.dv8tion.jda.api.*;
 import net.dv8tion.jda.api.entities.Activity;
-import normalCommands.BingoCommand;
-import normalCommands.GenerateBingo;
+import normalCommands.bingo.*;
 import normalCommands.ImgurCommand;
 import cubicCastles.OldPriceCommand;
-import normalCommands.RollCommand;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -48,8 +46,8 @@ public class Cubic {
 
         EventWaiter waiter = new EventWaiter();
         jda = new JDABuilder(AccountType.BOT)
-                .setToken(Constants.BOT_RELEASE_CODE)
-//                .setToken(Constants.BOT_TEST_CODE)
+//                .setToken(Constants.BOT_RELEASE_CODE)
+                .setToken(Constants.BOT_TEST_CODE)
                 .addEventListeners(commandClient(waiter).build(),waiter)
                 .setStatus(OnlineStatus.DO_NOT_DISTURB).build();
         jda.setAutoReconnect(true);
@@ -114,7 +112,14 @@ public class Cubic {
 
                         //Normal
                         new ImgurCommand(),
+
+                        // Bingo Commands
                         new GenerateBingo(waiter),
+                        new BingoCommand(),
+                        new RollCommand(),
+                        new Verify(),
+                        new MarkCommand(),
+                        new UnmarkCommand(),
 
                         //Cubic Castles
                         new CraftCommand(),
@@ -129,7 +134,6 @@ public class Cubic {
                         new ForumRules(),
                         new GameRules(),
                         new NewsCommand(),
-                        new RollCommand(),
 
                         //Moderation
                         new ClearCommand(),
@@ -143,7 +147,6 @@ public class Cubic {
                         new UnbanCommand(),
                         new AuctionSet(),
                         new ModLogSet(),
-                        new BingoCommand(),
 
                         //Prices
                         new OldPriceCommand(),
