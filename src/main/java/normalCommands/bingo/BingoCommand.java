@@ -7,9 +7,10 @@ import utils.Constants;
 import utils.Msg;
 
 import javax.imageio.ImageIO;
-import java.io.*;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class BingoCommand extends Command {
     public BingoCommand() {

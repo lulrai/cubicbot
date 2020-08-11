@@ -43,6 +43,7 @@ public class Cubic {
         // Initialize bingo cards
         GenerateBingo.initializeBingoCards();
         RollCommand.initializeChosenCache();
+        BingoItem.initializeItemPools();
 
         EventWaiter waiter = new EventWaiter();
         jda = new JDABuilder(AccountType.BOT)
@@ -121,7 +122,7 @@ public class Cubic {
                         new MarkCommand(),
                         new UnmarkCommand(),
                         new BingoClearCommand(),
-                        new BingoItem(),
+                        new BingoItem(waiter),
 
                         //Cubic Castles
                         new CraftCommand(),

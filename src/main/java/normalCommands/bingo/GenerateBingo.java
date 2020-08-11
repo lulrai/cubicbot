@@ -11,11 +11,6 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import utils.CacheUtils;
 import utils.Constants;
 import utils.Msg;
 
@@ -23,7 +18,6 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -91,32 +85,19 @@ public class GenerateBingo extends Command {
     }
 
     private void generateCard(CommandEvent event, Message m, User user) {
-        this.cooldown = 30;
-        this.cooldownScope = CooldownScope.GLOBAL;
         try{
-            String basePicURL = "http://cubiccastles.com/recipe_html/";
-
-            Document doc = Jsoup.parse(CacheUtils.getCache("item"));
-
-            Elements itemDiv = doc.select("div#CONTAINER > div.HIDE_CONTAINER");
-
-            ArrayList<String> itemImages = new ArrayList<>();
             ArrayList<String> itemNames = new ArrayList<>();
-            Element itemList = itemDiv.get(2);
-            while(itemImages.size() < 24){
-                Random rand = new Random();
-                Element item = itemList.select("tr > td").get(rand.nextInt(itemList.select("tr > td").size()));
-                String u = basePicURL + item.select("img").attr("src");
-                if(!itemImages.contains(u)){
-                    itemImages.add(u);
-                    itemNames.add(item.text());
+            Random rand = new Random();
+            while(itemNames.size() < 24){
+                String itemName = BingoItem.smallItemPool.get(rand.nextInt(BingoItem.smallItemPool.size()));
+                if(!itemNames.contains(itemName)){
+                    itemNames.add(itemName);
                 }
             }
 
-            itemImages.add(12, "placeHolder");
             itemNames.add(12, "Free");
 
-            Entry<String[][], BufferedImage> board = generateBoard(itemImages, itemNames);
+            Entry<String[][], BufferedImage> board = generateBoard(itemNames);
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             ImageIO.write(board.getValue(), "png", os);                          // Passing: ​(RenderedImage im, String formatName, OutputStream output)
             InputStream is = new ByteArrayInputStream(os.toByteArray());
@@ -138,10 +119,9 @@ public class GenerateBingo extends Command {
                 Msg.replyTimed(event, "Successfully DM'ed the card.", 5, TimeUnit.SECONDS);
             }, n -> Msg.replyTimed(event, "Could not send a DM. Please manually save the following card or retrieve it later using `\"+Constants.D_PREFIX+\"card` command.", 5, TimeUnit.SECONDS));
 
-            itemImages.clear();
             is.close();
             os.close();
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "GenerateBingo.java");
         }
@@ -181,7 +161,7 @@ public class GenerateBingo extends Command {
     }
 
 
-    private Entry<String[][], ArrayList<BufferedImage>> generateCards(ArrayList<String> itemImages, ArrayList<String> itemNames) throws IOException {
+    private Entry<String[][], ArrayList<BufferedImage>> generateCards(ArrayList<String> itemNames) throws IOException {
         ArrayList<BufferedImage> cards = new ArrayList<>();
         String[][] names = new String[5][5];
 
@@ -190,7 +170,7 @@ public class GenerateBingo extends Command {
 
         int row = 0;
         int col = 0;
-        for(int i = 0; i < itemImages.size(); i++) {
+        for(int i = 0; i < itemNames.size(); i++) {
             BufferedImage bingoSlot = ImageIO.read(new File(guildDir, "bingoslot.png"));
             Graphics backG = bingoSlot.getGraphics();
             if(i == 12) {
@@ -209,8 +189,8 @@ public class GenerateBingo extends Command {
                 }
                 col++;
 //                BufferedImage image = ImageIO.read(new File(guildDir, "test.png"));
-                URL url = new URL(itemImages.get(i));
-                BufferedImage image = ImageIO.read(url);
+                File itemDir = new File(workingDir.resolve("db/cards/items").toUri());
+                BufferedImage image = ImageIO.read(new File(itemDir, itemNames.get(i)+".png"));
                 double widthScale, heightScale;
                 if(image.getWidth() < image.getHeight()){
                     widthScale = 1;
@@ -232,8 +212,8 @@ public class GenerateBingo extends Command {
         return new AbstractMap.SimpleEntry<>(names, cards);
     }
 
-    private Entry<String[][], BufferedImage> generateBoard(ArrayList<String> itemImages, ArrayList<String> itemNames) throws IOException {
-        Entry<String[][], ArrayList<BufferedImage>> images = generateCards(itemImages, itemNames);
+    private Entry<String[][], BufferedImage> generateBoard(ArrayList<String> itemNames) throws IOException {
+        Entry<String[][], ArrayList<BufferedImage>> images = generateCards(itemNames);
 
         Path workingDir = Paths.get(System.getProperty("user.dir"));
         File guildDir = new File(workingDir.resolve("db/global").toUri());

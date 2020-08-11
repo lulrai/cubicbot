@@ -3,18 +3,16 @@ package normalCommands.bingo;
 import botOwnerCommands.ExceptionHandler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import core.Cubic;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import utils.CacheUtils;
 import utils.Msg;
 
 import java.awt.*;
 import java.io.*;
+import java.net.URLEncoder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -39,33 +37,36 @@ public class RollCommand extends Command {
                         || event.getAuthor().getId().equals("195621535703105536")))) return;
 
         try {
-            String basePicURL = "http://cubiccastles.com/recipe_html/";
+            if(BingoItem.smallItemPool.isEmpty()){
+                Msg.bad(event, "The item pool is empty. Please generate one first.");
+                return;
+            }
 
-            Document doc = Jsoup.parse(CacheUtils.getCache("item"));
-
-            Elements itemDiv = doc.select("div#CONTAINER > div.HIDE_CONTAINER");
-            Elements itemList = itemDiv.get(2).select("tr > td");
+            Path workingDir = Paths.get(System.getProperty("user.dir"));
+            File guildDir = new File(workingDir.resolve("db/cards/items").toUri());
 
             Random r = new Random();
-            Element item = itemList.get(r.nextInt(itemList.size()));
 
-            String itemName = item.text();
-            String itemImage = basePicURL + item.select("img").attr("src");
-
+            String itemName = BingoItem.smallItemPool.get(r.nextInt(BingoItem.smallItemPool.size()));
+            if(chosenImages.size() == BingoItem.smallItemPool.size()){
+                Msg.bad(event, "This is literally impossible. Not sure how this managed to happen.." +
+                        " but all the items from the pool is rolled yet no bingo has been achieved. Clear the rolls?");
+                return;
+            }
             while(chosenImages.contains(itemName)) {
-                item = itemList.get(r.nextInt(itemList.size()));
-
-                itemName = item.text();
-                itemImage = basePicURL + item.select("img").attr("src");
+                itemName = BingoItem.smallItemPool.get(r.nextInt(BingoItem.smallItemPool.size()));
             }
 
             storeItem(itemName);
+
+            File bingoPool = new File(guildDir, itemName+".txt");
+            Message image = Cubic.getJDA().getTextChannelById("740309750369091796").sendFile(bingoPool, URLEncoder.encode(bingoPool.getName(),"utf-8")).complete();
 
             EmbedBuilder em = new EmbedBuilder();
             em.setColor(Color.YELLOW);
             em.setTitle("BINGO Item");
             em.setDescription(itemName);
-            em.setImage(itemImage);
+            em.setImage(image.getAttachments().get(0).getUrl());
             em.setFooter("Mark this item off on your card if you have it.");
 
             if(event.getGuild().getId().equals("365932526297939971")) {
