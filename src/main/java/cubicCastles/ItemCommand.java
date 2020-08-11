@@ -4,6 +4,7 @@ import botOwnerCommands.ExceptionHandler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -14,6 +15,7 @@ import utils.Constants;
 import utils.Msg;
 
 import java.awt.*;
+import java.net.URLEncoder;
 
 public class ItemCommand extends Command {
     public ItemCommand() {
@@ -50,11 +52,11 @@ public class ItemCommand extends Command {
     private static Boolean checkStrings(String str1, String str2) {
         if (str1.trim().equalsIgnoreCase(str2.trim())) {
             return true;
-        } else return str1.trim().replaceAll("[^A-Za-z0-9 ]", "").equalsIgnoreCase(str2.trim());
+        } else return str1.trim().replaceAll("’", "'").replaceAll("[^A-Za-z0-9' ]", "").equalsIgnoreCase(str2.replaceAll("’", "'").replaceAll("[^A-Za-z0-9' ]", "").trim());
 	}
 
     private static Boolean checkSimilarStrings(String str1, String str2) {
-		return str1.toLowerCase().contains(str2.toLowerCase());
+		return str1.replaceAll("’", "'").toLowerCase().contains(str2.replaceAll("’", "'").toLowerCase());
 	}
 
     @Override
@@ -115,7 +117,11 @@ public class ItemCommand extends Command {
                 if (suggestions.length() == 0) {
                     em.setDescription("Item Not Found.");
                 } else {
-                    em.setDescription("Item Not Found. Did you mean any of these?\n\n" + suggestions);
+                    if (suggestions.length() >= MessageEmbed.TEXT_MAX_LENGTH) {
+                        em.setDescription("Too long of a suggestion list. Please type more characters so that the bot can suggest items.");
+                    } else {
+                        em.setDescription("Item Not Found. Did you mean any of these?\n\n" + suggestions);
+                    }
                 }
             }
 

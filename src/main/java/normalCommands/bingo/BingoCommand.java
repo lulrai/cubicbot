@@ -3,6 +3,7 @@ package normalCommands.bingo;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import net.dv8tion.jda.api.Permission;
+import utils.Constants;
 import utils.Msg;
 
 import javax.imageio.ImageIO;
@@ -44,21 +45,10 @@ public class BingoCommand extends Command {
                     e.printStackTrace();
                 }
             }
-            else if(event.getArgs().trim().equalsIgnoreCase("clear")){
-                GenerateBingo.bingoBoard.clear();
-                Path workingDir = Paths.get(System.getProperty("user.dir"));
-                File guildDir = new File(workingDir.resolve("db/cards/bingocards").toUri());
-                if(guildDir.exists()) {
-                    for (File f : guildDir.listFiles()) {
-                        f.delete();
-                    }
-                }
-                Msg.reply(event,"Successfully cleared the cards!");
-            }
         }
         else{
             if(!GenerateBingo.bingoBoard.containsKey(event.getAuthor().getId())){
-                Msg.reply(event, event.getMember().getAsMention()+", you don't have a bingo card. Please ask `snowy` or `WhimsicalFirefly` to generate one.");
+                Msg.reply(event, event.getMember().getAsMention()+", you don't have a bingo card. Please generate one using the `"+ Constants.D_PREFIX +"cgen` command.");
                 return;
             }
             ByteArrayOutputStream os = new ByteArrayOutputStream();

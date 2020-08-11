@@ -180,7 +180,11 @@ public class CraftCommand extends Command {
                     if (suggestions.length() == 0) {
                         em.setDescription("Item Not Found.");
                     } else {
-                        em.setDescription("Item Not Found. Did you mean any of these?\n\n" + suggestions);
+                        if (suggestions.length() >= MessageEmbed.TEXT_MAX_LENGTH) {
+                            em.setDescription("Too long of a suggestion list. Please type more characters so that the bot can suggest items.");
+                        } else {
+                            em.setDescription("Item Not Found. Did you mean any of these?\n\n" + suggestions);
+                        }
                     }
                     msg.editMessage(em.build()).queue();
                 } else {
@@ -208,7 +212,7 @@ public class CraftCommand extends Command {
             }
         } catch (Exception e) {
             e.printStackTrace();
-//            ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "CraftCommand.java");
+            ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "CraftCommand.java");
         }
     }
 

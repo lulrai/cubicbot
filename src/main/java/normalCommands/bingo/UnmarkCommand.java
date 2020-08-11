@@ -61,6 +61,7 @@ public class UnmarkCommand extends Command {
         position.put("E5", new Integer[]{990+60, 1250+40});
 
         String choice = event.getArgs().trim().toUpperCase();
+        event.getMessage().delete().queue();
         if(!position.containsKey(choice) || choice.isEmpty()) {
             Msg.badTimed(event, "Invalid position to unmark, please supply an argument ranging from `A1` to `E5`.", 5, TimeUnit.SECONDS);
         }
@@ -96,12 +97,13 @@ public class UnmarkCommand extends Command {
 
                     if(red == 255 && green == 0 && blue == 0){
                         if(!choice.equalsIgnoreCase(s)) {
+                            System.out.println(s);
                             gBoard.drawImage(cross.getScaledInstance((int)dim.getWidth(), (int)dim.getHeight(), Image.SCALE_SMOOTH), position.get(s)[0]-60, position.get(s)[1]-40, null);
-                            gBoard.dispose();
                         }
                     }
                     else if(choice.equalsIgnoreCase(s)) {
                         Msg.badTimed(event, "The position `"+choice+"` on the board is not marked.", 5, TimeUnit.SECONDS);
+                        gBoard.dispose();
                         return;
                     }
                 }
@@ -133,7 +135,6 @@ public class UnmarkCommand extends Command {
             }
             InputStream is = new ByteArrayInputStream(os.toByteArray());
 
-            event.getMessage().delete().queue();
             event.getTextChannel().sendMessage(event.getAuthor().getAsMention() + ", the spot `"+choice+"` has been unmarked. Here is your new board..").addFile(is,"board.png").queue();
             try {
                 is.close();

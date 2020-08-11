@@ -120,6 +120,8 @@ public class Cubic {
                         new Verify(),
                         new MarkCommand(),
                         new UnmarkCommand(),
+                        new BingoClearCommand(),
+                        new BingoItem(),
 
                         //Cubic Castles
                         new CraftCommand(),

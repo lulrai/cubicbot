@@ -38,17 +38,6 @@ public class RollCommand extends Command {
                         || event.getAuthor().getId().equals("222488511385698304")
                         || event.getAuthor().getId().equals("195621535703105536")))) return;
 
-        if(!event.getArgs().isEmpty() && event.getArgs().trim().equalsIgnoreCase("clear")){
-            Path workingDir = Paths.get(System.getProperty("user.dir"));
-            File guildDir = new File(workingDir.resolve("db/cards").toUri());
-            if (!guildDir.exists()) return;
-            File outFile = new File(guildDir, "chosenItems.txt");
-            if(!outFile.exists()) return;
-            outFile.delete();
-            chosenImages.clear();
-            Msg.reply(event, "Cleared the database of already chosen bingo items.");
-        }
-
         try {
             String basePicURL = "http://cubiccastles.com/recipe_html/";
 

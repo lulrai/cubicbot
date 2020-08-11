@@ -70,12 +70,12 @@ public class MarkCommand extends Command {
             try {
                 Map.Entry<String[][], BufferedImage> board = GenerateBingo.bingoBoard.get(event.getAuthor().getId());
 
-                int first = choice.toLowerCase().charAt(0) - 'a' + 1;
-                int second = Character.getNumericValue(choice.charAt(1));
-                if (!RollCommand.chosenImages.contains(board.getKey()[first-1][second-1])) {
-                    Msg.badTimed(event, "Cannot mark this item since it's not rolled yet.", 5, TimeUnit.SECONDS);
-                    return;
-                }
+//                int first = choice.toLowerCase().charAt(0) - 'a' + 1;
+//                int second = Character.getNumericValue(choice.charAt(1));
+//                if (!RollCommand.chosenImages.contains(board.getKey()[first-1][second-1])) {
+//                    Msg.badTimed(event, "Cannot mark this item since it's not rolled yet.", 5, TimeUnit.SECONDS);
+//                    return;
+//                }
 
                 Path workingDir = Paths.get(System.getProperty("user.dir"));
                 File guildDir = new File(workingDir.resolve("db/global").toUri());
