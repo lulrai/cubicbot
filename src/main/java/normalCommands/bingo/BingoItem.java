@@ -7,7 +7,6 @@ import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import com.jagrosh.jdautilities.menu.ButtonMenu;
 import com.vdurmont.emoji.EmojiManager;
 import com.vdurmont.emoji.EmojiParser;
-import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -33,7 +32,7 @@ public class BingoItem extends Command {
         this.name = "bingoitem";
         this.aliases = new String[] { "bi" };
         this.category = new Category("Cubic Castles");
-        this.ownerCommand = true;
+        this.ownerCommand = false;
         this.waiter = waiter;
     }
 
@@ -368,6 +367,10 @@ public class BingoItem extends Command {
         emojis.add(":three:");
         emojis.add(":four:");
         emojis.add(":five:");
+        emojis.add(":six:");
+        emojis.add(":seven:");
+        emojis.add(":eight:");
+        emojis.add(":nine:");
         String[] emoji = new String[numClasses];
         for (int i = 0; i < numClasses; i++) {
             emoji[i] = EmojiManager.getForAlias(emojis.get(i)).getUnicode();
@@ -387,6 +390,14 @@ public class BingoItem extends Command {
                 return 4;
             case ":five:":
                 return 5;
+            case ":six:":
+                return 6;
+            case ":seven:":
+                return 7;
+            case ":eight:":
+                return 8;
+            case ":nine:":
+                return 9;
         }
         return 0;
     }
@@ -403,6 +414,14 @@ public class BingoItem extends Command {
                 return ":four:";
             case 5:
                 return ":five:";
+            case 6:
+                return ":six:";
+            case 7:
+                return ":seven:";
+            case 8:
+                return ":eight:";
+            case 9:
+                return ":nine:";
         }
         return "";
     }

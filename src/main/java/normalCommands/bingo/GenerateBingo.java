@@ -40,6 +40,12 @@ public class GenerateBingo extends Command {
     @Override
     protected void execute(CommandEvent event) {
         if(!event.getGuild().getId().equals("240614697848537089") && !event.getGuild().getId().equals("365932526297939971") && !event.getGuild().getId().equals("705622006652993607")) return;
+
+        if(BingoItem.smallItemPool.isEmpty()){
+            Msg.bad(event, "The item pool is empty. Please generate one first.");
+            return;
+        }
+
         User user;
         if((event.getMember().hasPermission(Permission.ADMINISTRATOR) ||
                 event.getAuthor().getId().equals("169122787099672577") || event.getAuthor().getId().equals("222488511385698304") || event.getAuthor().getId().equals("195621535703105536"))

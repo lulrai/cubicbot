@@ -37,34 +37,7 @@ public class BingoClearCommand extends Command {
                 (event.getAuthor().getId().equals("169122787099672577")
                         || event.getAuthor().getId().equals("222488511385698304")
                         || event.getAuthor().getId().equals("195621535703105536")))){
-            if(event.getArgs().trim().equalsIgnoreCase("all")) {
-                File guildDir = new File(workingDir.resolve("db/cards").toUri());
-                if (!guildDir.exists()) return;
-                File outFile = new File(guildDir, "chosenItems.txt");
-                if(!outFile.exists()) return;
-                outFile.delete();
-                RollCommand.chosenImages.clear();
-                GenerateBingo.bingoBoard.clear();
-                if(bingoCardsMarked.toFile().exists()) {
-                    for (File f : bingoCardsMarked.toFile().listFiles()) {
-                        f.delete();
-                    }
-                }
-                if(bingoCards.toFile().exists()){
-                    for(File f : bingoCards.toFile().listFiles()){
-                        if(f.getName().endsWith(".png")) {
-                            try {
-                                copyFile(f, new File(bingoCardsMarked.resolve(f.getName()).toUri()));
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                }
-                GenerateBingo.initializeBingoCards();
-                Msg.reply(event, "Cleared the database of all rolled bingo items and cleared all the markings!");
-            }
-            else if(event.getArgs().trim().equalsIgnoreCase("rolls")){
+            if(event.getArgs().trim().equalsIgnoreCase("rolls")){
                 File guildDir = new File(workingDir.resolve("db/cards").toUri());
                 if (!guildDir.exists()) return;
                 File outFile = new File(guildDir, "chosenItems.txt");
@@ -73,7 +46,7 @@ public class BingoClearCommand extends Command {
                 RollCommand.chosenImages.clear();
                 Msg.reply(event, "Cleared the database of all rolled bingo items!");
             }
-            else if(event.getArgs().trim().equalsIgnoreCase("cards")){
+            else if(event.getArgs().trim().equalsIgnoreCase("marks")){
                 GenerateBingo.bingoBoard.clear();
                 if(bingoCardsMarked.toFile().exists()) {
                     for (File f : bingoCardsMarked.toFile().listFiles()) {
@@ -94,6 +67,20 @@ public class BingoClearCommand extends Command {
 
                 GenerateBingo.initializeBingoCards();
                 Msg.reply(event,"Successfully cleared all the cards of markings!");
+            }
+            else if(event.getArgs().trim().equalsIgnoreCase("cards")){
+                GenerateBingo.bingoBoard.clear();
+                if(bingoCardsMarked.toFile().exists()) {
+                    for (File f : bingoCardsMarked.toFile().listFiles()) {
+                        f.delete();
+                    }
+                }
+                if(bingoCards.toFile().exists()) {
+                    for (File f : bingoCards.toFile().listFiles()) {
+                        f.delete();
+                    }
+                }
+                Msg.reply(event,"Successfully cleared all the cards!");
             }
         } else {
             if(!GenerateBingo.bingoBoard.containsKey(event.getAuthor().getId())) {
