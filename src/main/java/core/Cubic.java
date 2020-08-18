@@ -47,8 +47,8 @@ public class Cubic {
 
         EventWaiter waiter = new EventWaiter();
         jda = new JDABuilder(AccountType.BOT)
-//                .setToken(Constants.BOT_RELEASE_CODE)
-                .setToken(Constants.BOT_TEST_CODE)
+                .setToken(Constants.BOT_RELEASE_CODE)
+//                .setToken(Constants.BOT_TEST_CODE)
                 .addEventListeners(commandClient(waiter).build(),waiter)
                 .setStatus(OnlineStatus.DO_NOT_DISTURB).build();
         jda.setAutoReconnect(true);
@@ -125,8 +125,8 @@ public class Cubic {
                         new BingoItem(waiter),
 
                         //Cubic Castles
-                        new CraftCommand(),
-                        new ItemCommand(),
+                        new CraftCommand(waiter),
+                        new ItemCommand(waiter),
                         new StaffListCommand(),
                         new PerksCommand(),
                         new StatusCommand(),
@@ -153,7 +153,7 @@ public class Cubic {
 
                         //Prices
                         new OldPriceCommand(),
-                        new PriceCommand()
+                        new PriceCommand(waiter)
 
                         //Tests
                 );

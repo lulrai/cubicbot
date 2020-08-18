@@ -2,6 +2,7 @@ package utils;
 
 import com.jagrosh.jdautilities.command.CommandEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
@@ -59,6 +60,13 @@ public class Msg {
         embedTimedMessage(event, em, timeTillDeletion, timeType);
     }
 
+    public static void replyTimed(TextChannel channel, String message, int timeTillDeletion, TimeUnit timeType) {
+        EmbedBuilder em = new EmbedBuilder();
+        em.setColor(Color.CYAN);
+        em.setDescription(message);
+        embedTimedMessage(channel, em, timeTillDeletion, timeType);
+    }
+
     public static void badTimed(CommandEvent event, String message, int timeTillDeletion, TimeUnit timeType) {
         EmbedBuilder em = new EmbedBuilder();
         em.setColor(Color.RED);
@@ -79,6 +87,13 @@ public class Msg {
 
     public static void embedTimedMessage(CommandEvent event, EmbedBuilder embed, int timeTillDeletion, TimeUnit timeType) {
         event.getTextChannel().sendMessage(embed.build()).queue(m -> {
+            ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(20);
+            exec.schedule(() -> m.delete().queue(), timeTillDeletion, timeType);
+        });
+    }
+
+    public static void embedTimedMessage(TextChannel channel, EmbedBuilder embed, int timeTillDeletion, TimeUnit timeType) {
+        channel.sendMessage(embed.build()).queue(m -> {
             ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(20);
             exec.schedule(() -> m.delete().queue(), timeTillDeletion, timeType);
         });
