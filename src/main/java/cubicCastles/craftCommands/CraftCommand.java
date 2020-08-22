@@ -87,7 +87,7 @@ public class CraftCommand extends Command {
         String givenName = event.getMessage().getContentRaw().split(" ", 2)[1].trim();
 
         try {
-            runCommand(givenName, msg, channel);
+            runCommand(givenName, msg, channel, event);
         } catch (Exception e) {
             e.printStackTrace();
             ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "CraftCommand.java");
@@ -118,7 +118,7 @@ public class CraftCommand extends Command {
         return itemName;
     }
 
-    private void runCommand(String givenName, Message msg, TextChannel channel) throws IOException {
+    private void runCommand(String givenName, Message msg, TextChannel channel, CommandEvent event) throws IOException {
         EmbedBuilder em = new EmbedBuilder();
 
         String basePicURL = "http://cubiccastles.com/recipe_html/";
@@ -146,7 +146,6 @@ public class CraftCommand extends Command {
                 em.setDescription(imgCache.get(key).getDesc());
                 File file = imgCache.get(key).getImage();
                 em.setImage("attachment://db/cache/" + URLEncoder.encode(file.getName(), "utf-8"));
-                msg.delete();
                 channel.sendFile(file, URLEncoder.encode(file.getName(), "utf-8")).embed(em.build()).queue();
                 return;
             }
@@ -158,14 +157,35 @@ public class CraftCommand extends Command {
                     + "Link for full post: [Click here](http://forums2.cubiccastles.com/index.php?p=/discussion/19605/full-easter-pow-gift-egg-crafting-guide/p1)");
             em.setImage("http://forums2.cubiccastles.com/uploads/editor/uk/lp45t6zaccd4.png");
             em.setFooter("Picture By Gdog", "http://forums2.cubiccastles.com/uploads/userpics/400/nDTXMQJ83XKVS.jpg");
-        } else {
+            msg.editMessage(event.getAuthor().getAsMention()).queue();
+            msg.editMessage(em.build()).queue();
+        }
+        else if (checkStrings("sooth salve", givenName) || checkStrings("thermometer", givenName) || checkStrings("tissue", givenName) || checkStrings("spray kleen", givenName) || checkStrings("compound x", givenName) || checkStrings("compound y", givenName) || checkStrings("simple mask", givenName) || checkStrings("n95 mask", givenName)) {
+            em.addField("Item Name", "Virus Update Crafting", true);
+            em.addField("Craft Type", "Basic Crafting Recipes", true);
+            em.setDescription("How to craft individual items from the Virus Update");
+            em.setImage("https://media.discordapp.net/attachments/705622006652993610/712876818314821632/unknown.png");
+            em.setFooter("Picture By -JZ- and V");
+            msg.editMessage(event.getAuthor().getAsMention()).queue();
+            msg.editMessage(em.build()).queue();
+        }
+        else if (checkStrings("melted chocolate", givenName) || checkStrings("candy syrup", givenName) || checkStrings("gooey delight", givenName) || checkStrings("mint chocolate", givenName) || checkStrings("coco candy", givenName) || checkStrings("ultimate candy", givenName)){
+            em.addField("Item Name", "Candy Crafting", true);
+            em.addField("Craft Type", "Basic Crafting Recipes", true);
+            em.setDescription("How to craft candies from the Candy Update");
+            em.setImage("http://forums2.cubiccastles.com/uploads/editor/dj/9t4xv7nlu3sq.png");
+            em.setFooter("Picture By *Joystick*");
+            msg.editMessage(event.getAuthor().getAsMention()).queue();
+            msg.editMessage(em.build()).queue();
+        }
+        else {
             Elements itemDiv = doc.select("div#CONTAINER > div.HIDE_CONTAINER");
             int count = 0;
             for (int i = 4; i < itemDiv.size() - 1; i++) {
                 Elements itemList = itemDiv.get(i).select("tr");
                 for (Element element : itemList) {
                     Elements td = element.select("td");
-                    if (checkSimilarStrings(td.get(td.size() - 1).text().trim(), givenName) && count <= 6) {
+                    if (checkSimilarStrings(td.get(td.size() - 1).text().trim(), givenName) && count <= 8) {
                         count++;
                         suggestions.append(BingoItem.numberToEmoji(count)).append(" ").append(td.get(td.size() - 1).text().trim()).append("\n");
                     }
@@ -222,8 +242,8 @@ public class CraftCommand extends Command {
                         em.setImage(image.getAttachments().get(0).getUrl());
                         Item item = new Item(itemName, itemType, itemDesc, f);
                         imgCache.put(itemName.trim(), item);
+                        msg.editMessage(event.getAuthor().getAsMention()).queue();
                         msg.editMessage(em.build()).queue();
-
                         return;
                     }
                 }
@@ -242,11 +262,12 @@ public class CraftCommand extends Command {
                             .setChoices(getEmojis(count))
                             .addChoice(EmojiManager.getForAlias("x").getUnicode())
                             .setEventWaiter(waiter)
+                            .setUsers(event.getAuthor())
                             .setTimeout(20, TimeUnit.SECONDS)
                             .setColor(Color.orange)
                             .setAction(v -> {
                                 if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":x:")) {
-                                    Msg.replyTimed(channel, "Cancelled choosing a crafting recipe.", 5, TimeUnit.SECONDS);
+                                    Msg.reply(channel, "Cancelled choosing a crafting recipe.");
                                 }
                                 else{
                                     int choice = emojiToNumber(EmojiParser.parseToAliases(v.getEmoji()));
@@ -256,7 +277,7 @@ public class CraftCommand extends Command {
                                     else {
                                         String[] split = suggestions.toString().replaceAll(":.+?:", "").split("\n");
                                         try {
-                                            runCommand(split[choice-1], msg, channel);
+                                            runCommand(split[choice-1].trim(), msg, channel, event);
                                         } catch (IOException e) {
                                             e.printStackTrace();
                                         }

@@ -96,7 +96,7 @@ public class PriceCommand extends Command
         final StringBuilder suggestions = new StringBuilder();
         int count = 0;
         for (final String item : PriceCommand.priceMap.keySet()) {
-            if (checkSimilarStrings(item, givenItem) && count <= 6) {
+            if (checkSimilarStrings(item, givenItem) && count <= 8) {
                 count++;
                 suggestions.append(BingoItem.numberToEmoji(count)).append(" ").append(item.trim()).append("\n");
             }
@@ -122,6 +122,7 @@ public class PriceCommand extends Command
                 em.addField("Price Range", NumberFormat.getInstance().format(PriceCommand.priceMap.get(item)[0]) + ((PriceCommand.priceMap.get(item).length > 2) ? ("/" + PriceCommand.priceMap.get(item)[2] + "c") : "c") + " - " + NumberFormat.getInstance().format(PriceCommand.priceMap.get(item)[1]) + ((PriceCommand.priceMap.get(item).length > 2) ? ("/" + PriceCommand.priceMap.get(item)[3] + "c") : "c"), true);
                 em.addField("Average Price", NumberFormat.getInstance().format((int)((PriceCommand.priceMap.get(item)[0] + PriceCommand.priceMap.get(item)[1]) / 2.0)) + ((PriceCommand.priceMap.get(item).length > 2) ? ("/" + (int)((PriceCommand.priceMap.get(item)[2] + PriceCommand.priceMap.get(item)[3]) / 2.0) + "c") : "c"), true);
                 em.setFooter("Last Updated: " + PriceCommand.recentUpdate +" (Disclaimer: May not be up to date.)");
+                msg.editMessage(event.getAuthor().getAsMention()).queue();
                 msg.editMessage(em.build()).queue();
                 return;
             }
@@ -153,11 +154,13 @@ public class PriceCommand extends Command
                     .setChoices(getEmojis(count))
                     .addChoice(EmojiManager.getForAlias("x").getUnicode())
                     .setEventWaiter(waiter)
+                    .setUsers(event.getAuthor())
                     .setTimeout(20, TimeUnit.SECONDS)
                     .setColor(Color.orange)
+                    .setUsers()
                     .setAction(v -> {
                         if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":x:")) {
-                            Msg.replyTimed(event.getTextChannel(), "Cancelled choosing an item price.", 5, TimeUnit.SECONDS);
+                            Msg.reply(event.getTextChannel(), "Cancelled choosing an item price.");
                         }
                         else{
                             int choice = emojiToNumber(EmojiParser.parseToAliases(v.getEmoji()));
@@ -166,7 +169,7 @@ public class PriceCommand extends Command
                             }
                             else {
                                 String[] split = suggestions.toString().replaceAll(":.+?:", "").split("\n");
-                                runCommand(split[choice-1], event, msg);
+                                runCommand(split[choice-1].trim(), event, msg);
                             }
                         }
                     })

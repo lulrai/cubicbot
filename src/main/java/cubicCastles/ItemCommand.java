@@ -104,7 +104,7 @@ public class ItemCommand extends Command {
             for (int i = 0; i < 4; i++) {
                 Element itemList = itemDiv.get(i);
                 for (Element item : itemList.select("tr > td")) {
-                    if (checkSimilarStrings(item.text(), givenItem) && count <= 6) {
+                    if (checkSimilarStrings(item.text(), givenItem) && count <= 8) {
                         count++;
                         suggestions.append(BingoItem.numberToEmoji(count)).append(" ").append(item.text().trim()).append("\n");
                     }
@@ -121,27 +121,32 @@ public class ItemCommand extends Command {
                         }
                         em.addField("Type", itemType, false);
                         em.setThumbnail(itemImage);
+                        event.getTextChannel().sendMessage(em.build()).queue();
                         return;
                     }
                 }
             }
             if (suggestions.length() == 0) {
                 em.setDescription("Item Not Found.");
+                event.getTextChannel().sendMessage(em.build()).queue();
             } else {
                 if (suggestions.length() >= MessageEmbed.TEXT_MAX_LENGTH) {
                     em.setDescription("Too long of a suggestion list. Please type more characters so that the bot can suggest items.");
+                    event.getTextChannel().sendMessage(em.build()).queue();
                 } else {
                     new ButtonMenu.Builder()
                             .setDescription("Could not find an item with that name. Here are some possible suggestions.\n" +
                                     suggestions.toString().trim())
                             .setChoices(getEmojis(count))
+                            .addUsers()
                             .addChoice(EmojiManager.getForAlias("x").getUnicode())
                             .setEventWaiter(waiter)
+                            .setUsers(event.getAuthor())
                             .setTimeout(20, TimeUnit.SECONDS)
                             .setColor(Color.orange)
                             .setAction(v -> {
                                 if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":x:")) {
-                                    Msg.replyTimed(event.getTextChannel(), "Cancelled choosing an item.", 5, TimeUnit.SECONDS);
+                                    Msg.reply(event.getTextChannel(), "Cancelled choosing an item.");
                                 }
                                 else{
                                     int choice = emojiToNumber(EmojiParser.parseToAliases(v.getEmoji()));
@@ -150,7 +155,7 @@ public class ItemCommand extends Command {
                                     }
                                     else {
                                         String[] split = suggestions.toString().replaceAll(":.+?:", "").split("\n");
-                                        runCommand(split[choice-1], event);
+                                        runCommand(split[choice-1].trim(), event);
                                     }
                                 }
                             })
@@ -159,7 +164,6 @@ public class ItemCommand extends Command {
                             }).build().display(event.getTextChannel());
                 }
             }
-            event.getTextChannel().sendMessage(em.build()).queue();
         } catch (InsufficientPermissionException ex) {
             event.getTextChannel().sendMessage(ex.getMessage()).queue();
         } catch (Exception e) {

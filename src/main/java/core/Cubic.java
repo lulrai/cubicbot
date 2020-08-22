@@ -47,8 +47,8 @@ public class Cubic {
 
         EventWaiter waiter = new EventWaiter();
         jda = new JDABuilder(AccountType.BOT)
-                .setToken(Constants.BOT_RELEASE_CODE)
-//                .setToken(Constants.BOT_TEST_CODE)
+//                .setToken(Constants.BOT_RELEASE_CODE)
+                .setToken(Constants.BOT_TEST_CODE)
                 .addEventListeners(commandClient(waiter).build(),waiter)
                 .setStatus(OnlineStatus.DO_NOT_DISTURB).build();
         jda.setAutoReconnect(true);
@@ -98,6 +98,8 @@ public class Cubic {
                         new EvalCommand(),
                         new UpdateCache(),
                         new RestartCommand(),
+                        new GetLog(),
+                        new Guilds(waiter),
 
                         new AboutCommand(Color.CYAN, "and I'm here to make your experience with Cubic Castles even better!",
                                 new String[]{"Submitting Support Tickets", "Check Item Info", "Check Craft Info", "Check Staff List", "Check Perks Info", "Check Item Prices"},
