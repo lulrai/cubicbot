@@ -25,9 +25,6 @@ public class RestartCommand extends Command {
     protected void execute(CommandEvent commandEvent) {
         Msg.reply(commandEvent, "Restarting..");
 
-        if(AutoUpdatingStatus.m != null)
-            AutoUpdatingStatus.m.delete().queue();
-
         final String javaBin = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
 
         Path workingDir = Paths.get(System.getProperty("user.dir"));
