@@ -4,35 +4,35 @@
 
 package cubicCastles;
 
-import java.io.IOException;
-import java.util.HashMap;
-
+import botOwnerCommands.ExceptionHandler;
+import com.jagrosh.jdautilities.command.Command;
+import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import com.jagrosh.jdautilities.menu.ButtonMenu;
 import com.vdurmont.emoji.EmojiManager;
 import com.vdurmont.emoji.EmojiParser;
+import cubicCastles.craftCommands.CraftCommand;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.exceptions.ErrorResponseException;
+import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import normalCommands.bingo.BingoItem;
+import org.apache.commons.lang3.StringUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import utils.Msg;
 
+import java.awt.*;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
-import org.jsoup.nodes.Document;
-import org.apache.commons.lang3.StringUtils;
-import org.jsoup.nodes.Element;
 import java.util.regex.Pattern;
-import org.jsoup.Jsoup;
-import java.util.Iterator;
-import botOwnerCommands.ExceptionHandler;
-import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
-import java.text.NumberFormat;
-import net.dv8tion.jda.api.entities.Member;
-import java.awt.Color;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.EmbedBuilder;
-import com.jagrosh.jdautilities.command.CommandEvent;
-import java.util.Map;
-import com.jagrosh.jdautilities.command.Command;
-import utils.Msg;
 
 import static normalCommands.bingo.BingoItem.emojiToNumber;
 import static normalCommands.bingo.BingoItem.getEmojis;
@@ -79,6 +79,10 @@ public class PriceCommand extends Command
                     return;
                 }
                 final String givenItem = event.getArgs().trim();
+                if(givenItem.length() < 3){
+                    Msg.bad(event, "The name provided is too short. Please provide at least 3 characters long argument.");
+                    return;
+                }
                 runCommand(givenItem, event, msg);
             }
         }
@@ -93,12 +97,15 @@ public class PriceCommand extends Command
 
     private void runCommand(String givenItem, CommandEvent event, Message msg){
         final EmbedBuilder em = new EmbedBuilder();
-        final StringBuilder suggestions = new StringBuilder();
+        ArrayList<String> suggestionList = new ArrayList<>();
         int count = 0;
         for (final String item : PriceCommand.priceMap.keySet()) {
-            if (checkSimilarStrings(item, givenItem) && count <= 8) {
+            if (checkSimilarStrings(item, givenItem)) {
+                if(count == 5){
+                    count = 0;
+                }
                 count++;
-                suggestions.append(BingoItem.numberToEmoji(count)).append(" ").append(item.trim()).append("\n");
+                suggestionList.add(BingoItem.numberToEmoji(count) + " " + item.trim());
             }
             if (event.getMessage().getAuthor().getId().equals("169122787099672577") || event.getMessage().getAuthor().getId().equals("222488511385698304")){
                 if (event.getMessage().getMentionedMembers().size() > 0 && event.getMessage().getMentionedMembers().get(0).getUser().getId().equals("169122787099672577")) {
@@ -127,7 +134,7 @@ public class PriceCommand extends Command
                 return;
             }
         }
-        if (suggestions.length() == 0) {
+        if (suggestionList.size() == 0) {
             em.setTitle("Price not Found");
             em.setColor(Color.RED);
             em.setDescription("Price not found. Please check your input. Type less word for `itemName` if needed, instead of more words.");
@@ -141,44 +148,73 @@ public class PriceCommand extends Command
             em.setDescription("Price not found. Please check your input. Type at least three letters for `itemName` and don't type too many if you don't know the exact name.");
             msg.editMessage(em.build()).queue();
         }
-        else if (suggestions.length() >= 1024) {
-            em.setTitle("Too MANY Suggestions Found");
-            em.setColor(Color.BLUE);
-            em.setDescription("Too many suggestions were found to fit in a message. Please try typing more letters/words to minimize results.");
-            msg.editMessage(em.build()).queue();
-        }
         else {
-            new ButtonMenu.Builder()
-                    .setDescription("Possible Suggestions:\n" +
-                            suggestions.toString().trim())
-                    .setChoices(getEmojis(count))
-                    .addChoice(EmojiManager.getForAlias("x").getUnicode())
-                    .setEventWaiter(waiter)
-                    .setUsers(event.getAuthor())
-                    .setTimeout(20, TimeUnit.SECONDS)
-                    .setColor(Color.orange)
-                    .setUsers()
-                    .setAction(v -> {
-                        if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":x:")) {
-                            Msg.reply(event.getTextChannel(), "Cancelled choosing an item price.");
-                        }
-                        else{
-                            int choice = emojiToNumber(EmojiParser.parseToAliases(v.getEmoji()));
-                            if(choice == 0){
-                                Msg.bad(event.getTextChannel(), "Invalid choice from the suggestion list.");
-                            }
-                            else {
-                                String[] split = suggestions.toString().replaceAll(":.+?:", "").split("\n");
-                                runCommand(split[choice-1].trim(), event, msg);
-                            }
-                        }
-                    })
-                    .setFinalAction(me -> {
-                        me.delete().queue();
-                    }).build().display(event.getTextChannel());
+            final Map<Integer, List<String>> paginatedCommands = CraftCommand.partition(suggestionList, 5);
+            buildMenu(event, paginatedCommands, 1, msg);
         }
     }
 
+    private void buildMenu(CommandEvent event, Map<Integer, List<String>> suggestions, int pageNum, Message m){
+        StringBuilder sb = new StringBuilder();
+        for(String s : suggestions.get(pageNum-1)) sb.append(s).append("\n");
+        ButtonMenu.Builder bm = new ButtonMenu.Builder()
+                .setDescription("Possible Suggestions:\n" +
+                        sb.toString().trim() + "\n\n" + "Page: " + pageNum + "/" + suggestions.size())
+                .setEventWaiter(waiter)
+                .setUsers(event.getAuthor())
+                .setTimeout(20, TimeUnit.SECONDS)
+                .setColor(Color.orange)
+                .setAction(v -> {
+                    if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":x:")) {
+                        Msg.reply(event.getTextChannel(), "Cancelled choosing an item price.");
+                        m.delete().queue();
+                    }
+                    else if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":small_red_triangle:")){
+                        buildMenu(event, suggestions, pageNum+1, m);
+                    }
+                    else if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":small_red_triangle_down:")){
+                        buildMenu(event, suggestions, pageNum-1, m);
+                    }
+                    else{
+                        int choice = emojiToNumber(EmojiParser.parseToAliases(v.getEmoji()));
+                        if(choice == 0){
+                            Msg.bad(event.getTextChannel(), "Invalid choice from the suggestion list.");
+                            m.delete().queue();
+                        }
+                        else {
+                            runCommand(suggestions.get(pageNum-1).get(choice-1).replaceAll(":.+?:", "").trim(), event, m);
+                        }
+                    }
+                })
+                .setFinalAction(me -> {
+                    try {
+                        me.clearReactions().queue();
+                    }catch (Exception ignored) { }
+                });
+        if(pageNum == 1 && suggestions.size() == 1){
+            bm.addChoices(getEmojis(suggestions.get(pageNum-1).size()))
+                    .addChoice(EmojiManager.getForAlias("x").getUnicode());
+        }
+        else {
+            this.cooldown = 10;
+            this.cooldownScope = CooldownScope.USER;
+            if (pageNum <= 1) {
+                bm.addChoices(getEmojis(suggestions.get(pageNum - 1).size()))
+                        .addChoice(EmojiManager.getForAlias("small_red_triangle").getUnicode())
+                        .addChoice(EmojiManager.getForAlias("x").getUnicode());
+            } else if (pageNum >= suggestions.size()) {
+                bm.addChoice(EmojiManager.getForAlias("small_red_triangle_down").getUnicode())
+                        .addChoices(getEmojis(suggestions.get(pageNum - 1).size()))
+                        .addChoice(EmojiManager.getForAlias("x").getUnicode());
+            } else {
+                bm.addChoice(EmojiManager.getForAlias("small_red_triangle_down").getUnicode())
+                        .addChoices(getEmojis(suggestions.get(pageNum - 1).size()))
+                        .addChoice(EmojiManager.getForAlias("small_red_triangle").getUnicode())
+                        .addChoice(EmojiManager.getForAlias("x").getUnicode());
+            }
+        }
+        bm.build().display(m);
+    }
 
     public static void populatePrices() {
         Document docu = null;

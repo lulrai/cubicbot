@@ -2,6 +2,7 @@ package utils;
 
 import com.jagrosh.jdautilities.command.CommandEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -23,6 +24,13 @@ public class Msg {
         em.setColor(Color.CYAN);
         em.setDescription(message);
         event.getTextChannel().sendMessage(em.build()).queue();
+    }
+
+    public static Message replyRet(CommandEvent event, String message) {
+        EmbedBuilder em = new EmbedBuilder();
+        em.setColor(Color.CYAN);
+        em.setDescription(message);
+        return event.getTextChannel().sendMessage(em.build()).complete();
     }
 
     public static void reply(TextChannel mutedChannel, String message) {

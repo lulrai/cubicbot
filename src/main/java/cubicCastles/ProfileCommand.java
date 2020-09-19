@@ -14,10 +14,11 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.*;
 
+@Deprecated
 public class ProfileCommand extends Command {
     public ProfileCommand() {
-        this.name = "profile";
-        this.aliases = new String[]{"profiles", "id"};
+        this.name = "forumprofile";
+        this.aliases = new String[]{"fp", "id"};
         this.category = new Category("Cubic Castles");
         this.ownerCommand = false;
         this.cooldown = 3;

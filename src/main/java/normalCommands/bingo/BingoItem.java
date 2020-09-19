@@ -5,9 +5,12 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import com.jagrosh.jdautilities.menu.ButtonMenu;
+import com.jagrosh.jdautilities.menu.Paginator;
 import com.vdurmont.emoji.EmojiManager;
 import com.vdurmont.emoji.EmojiParser;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
+import net.dv8tion.jda.api.exceptions.PermissionException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -27,13 +30,24 @@ public class BingoItem extends Command {
     static Map<Integer, String> largeItemPool = new HashMap<>();
     static Map<Integer, String> smallItemPool = new HashMap<>();
     private EventWaiter waiter;
+    private final Paginator.Builder builder;
 
     public BingoItem(EventWaiter waiter) {
         this.name = "bingoitem";
-        this.aliases = new String[] { "bi" };
+        this.aliases = new String[] { "bi", "pool", "p" };
         this.category = new Category("Cubic Castles");
         this.ownerCommand = false;
         this.waiter = waiter;
+        builder = new Paginator.Builder()
+                .setColumns(2)
+                .setFinalAction(m -> {try{m.clearReactions().queue();}catch(PermissionException ignore){}})
+                .setItemsPerPage(20)
+                .waitOnSinglePage(false)
+                .useNumberedItems(false)
+                .showPageNumbers(true)
+                .wrapPageEnds(false)
+                .setEventWaiter(waiter)
+                .setTimeout(1, TimeUnit.MINUTES);
     }
 
     private static Boolean checkSimilarStrings(String str1, String str2) {
@@ -42,257 +56,268 @@ public class BingoItem extends Command {
 
     @Override
     protected void execute(CommandEvent event) {
+        boolean isFromBingo = event.getGuild().getCategoryById("756887929808224258").getTextChannels().parallelStream().anyMatch(c -> event.getTextChannel().getId().equals(c.getId()));
+        if(!event.getGuild().getId().equals("240614697848537089") && !event.getGuild().getId().equals("705622006652993607") && !isFromBingo) return;
+
+        if(!(event.getMember().hasPermission(Permission.ADMINISTRATOR) ||
+                (event.getAuthor().getId().equals("169122787099672577")
+                        || event.getAuthor().getId().equals("222488511385698304")
+                        || event.getAuthor().getId().equals("195621535703105536")))) return;
+
         String[] args = event.getArgs().split(" ", 2);
         if (args.length < 2) {
-            Msg.badTimed(event, "Invalid command use.", 5, TimeUnit.SECONDS);
-            return;
+            String[] s = smallItemPool.values().toArray(new String[0]);
+            builder.setItems(s)
+                    .setText("")
+                    .setUsers(event.getAuthor())
+                    .setColor(event.getMember().getColor());
+            builder.build().display(event.getTextChannel());
         }
+        else{
+            if (args[0].trim().equalsIgnoreCase("add")) {
+                String item = args[1].trim().replaceAll("[^0-9a-zA-Z' ]", "");
+                if (largeItemPool.containsValue(item)) {
+                    Msg.bad(event, "The provided item is already a part of the pool.");
+                } else {
+                    try {
+                        Document doc = Jsoup.parse(CacheUtils.getCache("item"));
+                        String basePicURL = "http://cubiccastles.com/recipe_html/";
 
-        if (args[0].trim().equalsIgnoreCase("add")) {
-            String item = args[1].trim().replaceAll("[^0-9a-zA-Z' ]", "");
-            if (largeItemPool.containsValue(item)) {
-                Msg.bad(event, "The provided item is already a part of the pool.");
-            } else {
-                try {
-                    Document doc = Jsoup.parse(CacheUtils.getCache("item"));
-                    String basePicURL = "http://cubiccastles.com/recipe_html/";
+                        Elements itemDiv = doc.select("div#CONTAINER > div.HIDE_CONTAINER");
+                        Elements itemList = itemDiv.get(2).select("tr > td");
 
-                    Elements itemDiv = doc.select("div#CONTAINER > div.HIDE_CONTAINER");
-                    Elements itemList = itemDiv.get(2).select("tr > td");
+                        Map<Integer, String[]> suggestions = new HashMap<>();
+                        int suggCount = 0;
 
-                    Map<Integer, String[]> suggestions = new HashMap<>();
-                    int suggCount = 0;
+                        for(int i = 0; i < itemList.size(); i++){
+                            String itemName = itemList.get(i).text().trim().replaceAll("[^0-9a-zA-Z' ]", "");
+                            String itemImage = basePicURL + itemList.get(i).select("img").attr("src");
 
-                    for(int i = 0; i < itemList.size(); i++){
-                        String itemName = itemList.get(i).text().trim().replaceAll("[^0-9a-zA-Z' ]", "");
-                        String itemImage = basePicURL + itemList.get(i).select("img").attr("src");
+                            if(itemName.equalsIgnoreCase(item)){
+                                largeItemPool.put(i, itemName);
 
-                        if(itemName.equalsIgnoreCase(item)){
-                            largeItemPool.put(i, itemName);
+                                addItemToDB(itemImage, itemName, i);
 
-                            addItemToDB(itemImage, itemName, i);
-
-                            Msg.reply(event, "Added the item provided to the item pool.");
-                            return;
-                        }
-                        else if(checkSimilarStrings(itemName, item)){
-                            suggCount++;
-                            suggestions.put(suggCount, new String[]{itemName, itemImage, String.valueOf(i)});
-                            if(suggCount >= 5){
-                                break;
+                                Msg.reply(event, "Added the item provided to the item pool.");
+                                return;
+                            }
+                            else if(checkSimilarStrings(itemName, item)){
+                                suggCount++;
+                                suggestions.put(suggCount, new String[]{itemName, itemImage, String.valueOf(i)});
+                                if(suggCount >= 5){
+                                    break;
+                                }
                             }
                         }
-                    }
 
-                    StringBuilder sb = new StringBuilder();
-                    for(int it : suggestions.keySet()){
-                        sb.append(numberToEmoji(it)).append(" ").append(suggestions.get(it)[0]).append("\n");
-                    }
+                        StringBuilder sb = new StringBuilder();
+                        for(int it : suggestions.keySet()){
+                            sb.append(numberToEmoji(it)).append(" ").append(suggestions.get(it)[0]).append("\n");
+                        }
 
-                    new ButtonMenu.Builder()
-                            .setDescription("Could not find an item with that name. Here are some possible suggestions.\n" +
-                                    sb.toString().trim())
-                            .setChoices(getEmojis(suggCount))
-                            .addChoice(EmojiManager.getForAlias("x").getUnicode())
-                            .setEventWaiter(waiter)
-                            .setTimeout(20, TimeUnit.SECONDS)
-                            .setColor(Color.orange)
-                            .setAction(v -> {
-                                if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":x:")) {
-                                    Msg.replyTimed(event, "Cancelled adding item to the pool.", 5, TimeUnit.SECONDS);
-                                }
-                                else{
-                                    int choice = emojiToNumber(EmojiParser.parseToAliases(v.getEmoji()));
-                                    if(choice == 0){
-                                        Msg.bad(event, "Invalid choice from the suggestion list.");
+                        new ButtonMenu.Builder()
+                                .setDescription("Could not find an item with that name. Here are some possible suggestions.\n" +
+                                        sb.toString().trim())
+                                .setChoices(getEmojis(suggCount))
+                                .addChoice(EmojiManager.getForAlias("x").getUnicode())
+                                .setEventWaiter(waiter)
+                                .setTimeout(20, TimeUnit.SECONDS)
+                                .setColor(Color.orange)
+                                .setAction(v -> {
+                                    if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":x:")) {
+                                        Msg.replyTimed(event, "Cancelled adding item to the pool.", 5, TimeUnit.SECONDS);
                                     }
-                                    else {
-                                        if (largeItemPool.containsValue(suggestions.get(choice)[0])) {
-                                            Msg.bad(event, "The provided item is already a part of the pool.");
-                                        } else {
-                                            try {
-                                                addItemToDB(suggestions.get(choice)[1], suggestions.get(choice)[0], Integer.parseInt(suggestions.get(choice)[2]));
-                                                largeItemPool.put(Integer.parseInt(suggestions.get(choice)[2]), suggestions.get(choice)[0]);
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
+                                    else{
+                                        int choice = emojiToNumber(EmojiParser.parseToAliases(v.getEmoji()));
+                                        if(choice == 0){
+                                            Msg.bad(event, "Invalid choice from the suggestion list.");
+                                        }
+                                        else {
+                                            if (largeItemPool.containsValue(suggestions.get(choice)[0])) {
+                                                Msg.bad(event, "The provided item is already a part of the pool.");
+                                            } else {
+                                                try {
+                                                    addItemToDB(suggestions.get(choice)[1], suggestions.get(choice)[0], Integer.parseInt(suggestions.get(choice)[2]));
+                                                    largeItemPool.put(Integer.parseInt(suggestions.get(choice)[2]), suggestions.get(choice)[0]);
+                                                } catch (IOException e) {
+                                                    e.printStackTrace();
+                                                }
+                                                Msg.reply(event, "Added the item chosen to the item pool.");
                                             }
-                                            Msg.reply(event, "Added the item chosen to the item pool.");
                                         }
                                     }
-                                }
-                            })
-                            .setFinalAction(me -> {
-                                me.delete().queue();
-                            }).build().display(event.getTextChannel());
-                } catch (InsufficientPermissionException ex) {
-                    event.getTextChannel().sendMessage(ex.getMessage()).queue();
-                } catch (Exception e) {
-                    ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "ItemCommand.java");
-                }
-            }
-        } else if (args[0].trim().equalsIgnoreCase("remove")) {
-            String item = args[1].trim().replaceAll("[^0-9a-zA-Z' ]", "");
-            Map<Integer, String[]> suggestions = new HashMap<>();
-            int suggCount = 0;
-
-            for(int key : largeItemPool.keySet()){
-                String itemName = largeItemPool.get(key).trim().replaceAll("[^0-9a-zA-Z' ]", "");
-                if(itemName.equalsIgnoreCase(item)){
-                    largeItemPool.remove(key);
-
-                    try {
-                        removeItemFromDB(itemName, key);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-                    Msg.reply(event, "Removed the item provided from the item pool.");
-                    return;
-                }
-                else if(checkSimilarStrings(itemName, item)){
-                    suggCount++;
-                    suggestions.put(suggCount, new String[]{itemName, String.valueOf(key)});
-                    if(suggCount >= 5){
-                        break;
+                                })
+                                .setFinalAction(me -> {
+                                    me.delete().queue();
+                                }).build().display(event.getTextChannel());
+                    } catch (InsufficientPermissionException ex) {
+                        event.getTextChannel().sendMessage(ex.getMessage()).queue();
+                    } catch (Exception e) {
+                        ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "ItemCommand.java");
                     }
                 }
-            }
+            } else if (args[0].trim().equalsIgnoreCase("remove")) {
+                String item = args[1].trim().replaceAll("[^0-9a-zA-Z' ]", "");
+                Map<Integer, String[]> suggestions = new HashMap<>();
+                int suggCount = 0;
 
-            StringBuilder sb = new StringBuilder();
-            for(int it : suggestions.keySet()){
-                sb.append(numberToEmoji(it)).append(" ").append(suggestions.get(it)[0]).append("\n");
-            }
+                for(int key : largeItemPool.keySet()){
+                    String itemName = largeItemPool.get(key).trim().replaceAll("[^0-9a-zA-Z' ]", "");
+                    if(itemName.equalsIgnoreCase(item)){
+                        largeItemPool.remove(key);
 
-            new ButtonMenu.Builder()
-                    .setDescription("Could not find an item with that name. Here are some possible suggestions.\n" +
-                            sb.toString().trim())
-                    .setChoices(getEmojis(suggCount))
-                    .addChoice(EmojiManager.getForAlias("x").getUnicode())
-                    .setEventWaiter(waiter)
-                    .setTimeout(20, TimeUnit.SECONDS)
-                    .setColor(Color.orange)
-                    .setAction(v -> {
-                        if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":x:")) {
-                            Msg.replyTimed(event, "Cancelled removing item from the pool.", 5, TimeUnit.SECONDS);
+                        try {
+                            removeItemFromDB(itemName, key);
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
-                        else{
-                            int choice = emojiToNumber(EmojiParser.parseToAliases(v.getEmoji()));
-                            if(choice == 0){
-                                Msg.bad(event, "Invalid choice from the suggestion list.");
-                            }
-                            else {
-                                try {
-                                    removeItemFromDB(suggestions.get(choice)[0], Integer.parseInt(suggestions.get(choice)[1]));
-                                    largeItemPool.remove(Integer.parseInt(suggestions.get(choice)[1]));
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                                Msg.reply(event, "Removed the item chosen from the item pool.");
-                            }
+
+                        Msg.reply(event, "Removed the item provided from the item pool.");
+                        return;
+                    }
+                    else if(checkSimilarStrings(itemName, item)){
+                        suggCount++;
+                        suggestions.put(suggCount, new String[]{itemName, String.valueOf(key)});
+                        if(suggCount >= 5){
+                            break;
                         }
-                    })
-                    .setFinalAction(me -> {
-                        me.delete().queue();
-                    }).build().display(event.getTextChannel());
-        } else if (args[0].trim().equalsIgnoreCase("generatePool")) {
-            if(!smallItemPool.isEmpty()){
+                    }
+                }
+
+                StringBuilder sb = new StringBuilder();
+                for(int it : suggestions.keySet()){
+                    sb.append(numberToEmoji(it)).append(" ").append(suggestions.get(it)[0]).append("\n");
+                }
+
                 new ButtonMenu.Builder()
-                        .setDescription("The bingo pool isn't empty. Do you still want to clear it?")
-                        .setChoices(EmojiManager.getForAlias("white_check_mark").getUnicode())
+                        .setDescription("Could not find an item with that name. Here are some possible suggestions.\n" +
+                                sb.toString().trim())
+                        .setChoices(getEmojis(suggCount))
                         .addChoice(EmojiManager.getForAlias("x").getUnicode())
                         .setEventWaiter(waiter)
                         .setTimeout(20, TimeUnit.SECONDS)
                         .setColor(Color.orange)
                         .setAction(v -> {
                             if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":x:")) {
-                                Msg.replyTimed(event, "Cancelled (re)generating pool.", 5, TimeUnit.SECONDS);
+                                Msg.replyTimed(event, "Cancelled removing item from the pool.", 5, TimeUnit.SECONDS);
                             }
-                            else if(EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":white_check_mark:")){
-                                clearBingoPool();
-                                try {
-                                    int poolSize = Integer.parseInt(args[1]);
-                                    if (poolSize > largeItemPool.size()) {
-                                        Msg.bad(event, "The entered number is larger than the total items available.\n" +
-                                                "Total items available: " + largeItemPool.size());
-                                    } else {
-                                        Msg.replyTimed(event, "Cleared existing pool and generating the pool of bingo of size " + poolSize + "...", 5, TimeUnit.SECONDS);
-                                        Random random = new Random();
-                                        int index = 0;
-                                        Path workingDir = Paths.get(System.getProperty("user.dir"));
-                                        File guildDir = new File(workingDir.resolve("db/cards/items").toUri());
-                                        File outFile = new File(guildDir, "bingoPool.txt");
-                                        if (!guildDir.exists()) {
-                                            return;
-                                        }
-                                        outFile.createNewFile();
-                                        FileWriter fw = new FileWriter(outFile, true);
-                                        BufferedWriter bw = new BufferedWriter(fw);
-                                        PrintWriter out = new PrintWriter(bw);
-                                        while (smallItemPool.size() < poolSize) {
-                                            int itemNum = random.nextInt(Collections.max(largeItemPool.keySet()));
-                                            if (largeItemPool.containsKey(itemNum) && !smallItemPool.containsValue(largeItemPool.get(itemNum))) {
-                                                smallItemPool.put(index, largeItemPool.get(itemNum));
-                                                out.println(index+","+largeItemPool.get(itemNum));
-                                                index++;
-                                            }
-                                        }
-                                        out.close();
-                                        bw.close();
-                                        fw.close();
-                                        Msg.reply(event, "Bingo pool generated of size " + poolSize + ".");
+                            else{
+                                int choice = emojiToNumber(EmojiParser.parseToAliases(v.getEmoji()));
+                                if(choice == 0){
+                                    Msg.bad(event, "Invalid choice from the suggestion list.");
+                                }
+                                else {
+                                    try {
+                                        removeItemFromDB(suggestions.get(choice)[0], Integer.parseInt(suggestions.get(choice)[1]));
+                                        largeItemPool.remove(Integer.parseInt(suggestions.get(choice)[1]));
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
                                     }
-                                } catch (NumberFormatException e) {
-                                    Msg.badTimed(event, "Number entered is not valid.", 5, TimeUnit.SECONDS);
-                                } catch (IOException e) {
-                                    e.printStackTrace();
+                                    Msg.reply(event, "Removed the item chosen from the item pool.");
                                 }
                             }
                         })
                         .setFinalAction(me -> {
                             me.delete().queue();
                         }).build().display(event.getTextChannel());
-            }
-            else{
-                try {
-                    int poolSize = Integer.parseInt(args[1]);
-                    if (poolSize > largeItemPool.size()) {
-                        Msg.bad(event, "The entered number is larger than the total items available.\n" +
-                                "Total items available: " + largeItemPool.size());
-                    } else {
-                        Msg.replyTimed(event, "Cleared existing pool and generating the pool of bingo of size " + poolSize + "...", 5, TimeUnit.SECONDS);
-                        Random random = new Random();
-                        int index = 0;
-                        Path workingDir = Paths.get(System.getProperty("user.dir"));
-                        File guildDir = new File(workingDir.resolve("db/cards/items").toUri());
-                        File outFile = new File(guildDir, "bingoPool.txt");
-                        if (!guildDir.exists()) {
-                            return;
-                        }
-                        outFile.createNewFile();
-                        FileWriter fw = new FileWriter(outFile, true);
-                        BufferedWriter bw = new BufferedWriter(fw);
-                        PrintWriter out = new PrintWriter(bw);
-                        while (smallItemPool.size() < poolSize) {
-                            int itemNum = random.nextInt(Collections.max(largeItemPool.keySet()));
-                            if (largeItemPool.containsKey(itemNum) && !smallItemPool.containsValue(largeItemPool.get(itemNum))) {
-                                smallItemPool.put(index, largeItemPool.get(itemNum));
-                                out.println(index+","+largeItemPool.get(itemNum));
-                                index++;
+            } else if (args[0].trim().equalsIgnoreCase("generatePool")) {
+                if(!smallItemPool.isEmpty()){
+                    new ButtonMenu.Builder()
+                            .setDescription("The bingo pool isn't empty. Do you still want to clear it?")
+                            .setChoices(EmojiManager.getForAlias("white_check_mark").getUnicode())
+                            .addChoice(EmojiManager.getForAlias("x").getUnicode())
+                            .setEventWaiter(waiter)
+                            .setTimeout(20, TimeUnit.SECONDS)
+                            .setColor(Color.orange)
+                            .setAction(v -> {
+                                if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":x:")) {
+                                    Msg.replyTimed(event, "Cancelled (re)generating pool.", 5, TimeUnit.SECONDS);
+                                }
+                                else if(EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":white_check_mark:")){
+                                    clearBingoPool();
+                                    try {
+                                        int poolSize = Integer.parseInt(args[1]);
+                                        if (poolSize > largeItemPool.size()) {
+                                            Msg.bad(event, "The entered number is larger than the total items available.\n" +
+                                                    "Total items available: " + largeItemPool.size());
+                                        } else {
+                                            Msg.replyTimed(event, "Cleared existing pool and generating the pool of bingo of size " + poolSize + "...", 5, TimeUnit.SECONDS);
+                                            Random random = new Random();
+                                            int index = 0;
+                                            Path workingDir = Paths.get(System.getProperty("user.dir"));
+                                            File guildDir = new File(workingDir.resolve("db/cards/items").toUri());
+                                            File outFile = new File(guildDir, "bingoPool.txt");
+                                            if (!guildDir.exists()) {
+                                                return;
+                                            }
+                                            outFile.createNewFile();
+                                            FileWriter fw = new FileWriter(outFile, true);
+                                            BufferedWriter bw = new BufferedWriter(fw);
+                                            PrintWriter out = new PrintWriter(bw);
+                                            while (smallItemPool.size() < poolSize) {
+                                                int itemNum = random.nextInt(Collections.max(largeItemPool.keySet()));
+                                                if (largeItemPool.containsKey(itemNum) && !smallItemPool.containsValue(largeItemPool.get(itemNum))) {
+                                                    smallItemPool.put(index, largeItemPool.get(itemNum));
+                                                    out.println(index+","+largeItemPool.get(itemNum));
+                                                    index++;
+                                                }
+                                            }
+                                            out.close();
+                                            bw.close();
+                                            fw.close();
+                                            Msg.reply(event, "Bingo pool generated of size " + poolSize + ".");
+                                        }
+                                    } catch (NumberFormatException e) {
+                                        Msg.badTimed(event, "Number entered is not valid.", 5, TimeUnit.SECONDS);
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            })
+                            .setFinalAction(me -> {
+                                me.delete().queue();
+                            }).build().display(event.getTextChannel());
+                }
+                else{
+                    try {
+                        int poolSize = Integer.parseInt(args[1]);
+                        if (poolSize > largeItemPool.size()) {
+                            Msg.bad(event, "The entered number is larger than the total items available.\n" +
+                                    "Total items available: " + largeItemPool.size());
+                        } else {
+                            Msg.replyTimed(event, "Cleared existing pool and generating the pool of bingo of size " + poolSize + "...", 5, TimeUnit.SECONDS);
+                            Random random = new Random();
+                            int index = 0;
+                            Path workingDir = Paths.get(System.getProperty("user.dir"));
+                            File guildDir = new File(workingDir.resolve("db/cards/items").toUri());
+                            File outFile = new File(guildDir, "bingoPool.txt");
+                            if (!guildDir.exists()) {
+                                return;
                             }
+                            outFile.createNewFile();
+                            FileWriter fw = new FileWriter(outFile, true);
+                            BufferedWriter bw = new BufferedWriter(fw);
+                            PrintWriter out = new PrintWriter(bw);
+                            while (smallItemPool.size() < poolSize) {
+                                int itemNum = random.nextInt(Collections.max(largeItemPool.keySet()));
+                                if (largeItemPool.containsKey(itemNum) && !smallItemPool.containsValue(largeItemPool.get(itemNum))) {
+                                    smallItemPool.put(index, largeItemPool.get(itemNum));
+                                    out.println(index+","+largeItemPool.get(itemNum));
+                                    index++;
+                                }
+                            }
+                            out.close();
+                            bw.close();
+                            fw.close();
+                            Msg.reply(event, "Bingo pool generated of size " + poolSize + ".");
                         }
-                        out.close();
-                        bw.close();
-                        fw.close();
-                        Msg.reply(event, "Bingo pool generated of size " + poolSize + ".");
+                    } catch (NumberFormatException e) {
+                        Msg.badTimed(event, "Number entered is not valid.", 5, TimeUnit.SECONDS);
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
-                } catch (NumberFormatException e) {
-                    Msg.badTimed(event, "Number entered is not valid.", 5, TimeUnit.SECONDS);
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
             }
-        } else {
-            Msg.badTimed(event, "Invalid command use.", 5, TimeUnit.SECONDS);
         }
     }
 

@@ -7,8 +7,12 @@ import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import com.jagrosh.jdautilities.menu.ButtonMenu;
 import com.vdurmont.emoji.EmojiManager;
 import com.vdurmont.emoji.EmojiParser;
+import cubicCastles.craftCommands.CraftCommand;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.exceptions.ContextException;
+import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import normalCommands.bingo.BingoItem;
 import org.jsoup.Jsoup;
@@ -20,8 +24,9 @@ import utils.Constants;
 import utils.Msg;
 
 import java.awt.*;
-import java.io.IOException;
-import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static normalCommands.bingo.BingoItem.emojiToNumber;
@@ -79,11 +84,12 @@ public class ItemCommand extends Command {
         }
 
         String givenItem = event.getMessage().getContentRaw().split(" ", 2)[1].trim();
-        runCommand(givenItem, event);
+        Message m = event.getTextChannel().sendMessage("Finding item..").complete();
+        runCommand(givenItem, event, m);
     }
 
-    private void runCommand(String givenItem, CommandEvent event){
-        StringBuilder suggestions = new StringBuilder();
+    public String runCommand(String givenItem, CommandEvent event, Message m){
+        ArrayList<String> suggestionList = new ArrayList<>();
 
         EmbedBuilder em = new EmbedBuilder();
         try {
@@ -105,8 +111,11 @@ public class ItemCommand extends Command {
                 Element itemList = itemDiv.get(i);
                 for (Element item : itemList.select("tr > td")) {
                     if (checkSimilarStrings(item.text(), givenItem) && count <= 8) {
+                        if(count == 5){
+                            count = 0;
+                        }
                         count++;
-                        suggestions.append(BingoItem.numberToEmoji(count)).append(" ").append(item.text().trim()).append("\n");
+                        suggestionList.add(BingoItem.numberToEmoji(count) + " " + item.text().trim());
                     }
                     if (checkStrings(item.text(), givenItem)) {
                         if (!item.select("font").attr("color").isEmpty()) {
@@ -121,54 +130,88 @@ public class ItemCommand extends Command {
                         }
                         em.addField("Type", itemType, false);
                         em.setThumbnail(itemImage);
-                        event.getTextChannel().sendMessage(em.build()).queue();
-                        return;
+                        m.editMessage(event.getAuthor().getAsMention()).queue();
+                        m.editMessage(em.build()).queue();
+                        return itemImage;
                     }
                 }
             }
-            if (suggestions.length() == 0) {
+            if (suggestionList.size() == 0) {
                 em.setDescription("Item Not Found.");
-                event.getTextChannel().sendMessage(em.build()).queue();
+                m.editMessage(em.build()).queue();
             } else {
-                if (suggestions.length() >= MessageEmbed.TEXT_MAX_LENGTH) {
-                    em.setDescription("Too long of a suggestion list. Please type more characters so that the bot can suggest items.");
-                    event.getTextChannel().sendMessage(em.build()).queue();
-                } else {
-                    new ButtonMenu.Builder()
-                            .setDescription("Could not find an item with that name. Here are some possible suggestions.\n" +
-                                    suggestions.toString().trim())
-                            .setChoices(getEmojis(count))
-                            .addUsers()
-                            .addChoice(EmojiManager.getForAlias("x").getUnicode())
-                            .setEventWaiter(waiter)
-                            .setUsers(event.getAuthor())
-                            .setTimeout(20, TimeUnit.SECONDS)
-                            .setColor(Color.orange)
-                            .setAction(v -> {
-                                if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":x:")) {
-                                    Msg.reply(event.getTextChannel(), "Cancelled choosing an item.");
-                                }
-                                else{
-                                    int choice = emojiToNumber(EmojiParser.parseToAliases(v.getEmoji()));
-                                    if(choice == 0){
-                                        Msg.bad(event.getTextChannel(), "Invalid choice from the suggestion list.");
-                                    }
-                                    else {
-                                        String[] split = suggestions.toString().replaceAll(":.+?:", "").split("\n");
-                                        runCommand(split[choice-1].trim(), event);
-                                    }
-                                }
-                            })
-                            .setFinalAction(me -> {
-                                me.delete().queue();
-                            }).build().display(event.getTextChannel());
-                }
+                final Map<Integer, List<String>> paginatedCommands = CraftCommand.partition(suggestionList, 5);
+                buildMenu(event, paginatedCommands, 1, m);
             }
         } catch (InsufficientPermissionException ex) {
             event.getTextChannel().sendMessage(ex.getMessage()).queue();
         } catch (Exception e) {
+            e.printStackTrace();
             ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "ItemCommand.java");
         }
+        return "";
+    }
+
+    private void buildMenu(CommandEvent event, Map<Integer, List<String>> suggestions, int pageNum, Message m){
+        StringBuilder sb = new StringBuilder();
+        for(String s : suggestions.get(pageNum-1)) sb.append(s).append("\n");
+        ButtonMenu.Builder bm = new ButtonMenu.Builder()
+                .setDescription("Could not find an item with that name. Here are some possible suggestions.\n" +
+                        sb.toString().trim() + "\n\n" + "Page: " + pageNum + "/" + suggestions.size())
+                .setEventWaiter(waiter)
+                .setUsers(event.getAuthor())
+                .setTimeout(20, TimeUnit.SECONDS)
+                .setColor(Color.orange)
+                .setAction(v -> {
+                    if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":x:")) {
+                        Msg.reply(event.getTextChannel(), "Cancelled choosing an item.");
+                        m.delete().queue();
+                    }
+                    else if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":small_red_triangle:")){
+                        buildMenu(event, suggestions, pageNum+1, m);
+                    }
+                    else if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":small_red_triangle_down:")){
+                        buildMenu(event, suggestions, pageNum-1, m);
+                    }
+                    else{
+                        int choice = emojiToNumber(EmojiParser.parseToAliases(v.getEmoji()));
+                        if(choice == 0){
+                            Msg.bad(event.getTextChannel(), "Invalid choice from the suggestion list.");
+                            m.delete().queue();
+                        }
+                        else {
+                            runCommand(suggestions.get(pageNum-1).get(choice-1).replaceAll(":.+?:", "").trim(), event, m);
+                        }
+                    }
+                })
+                .setFinalAction(me -> {
+                    try {
+                        me.clearReactions().queue();
+                    } catch (Exception ignored) {}
+                });
+        if(pageNum == 1 && suggestions.size() == 1){
+            bm.addChoices(getEmojis(suggestions.get(pageNum-1).size()))
+                    .addChoice(EmojiManager.getForAlias("x").getUnicode());
+        }
+        else {
+            this.cooldown = 10;
+            this.cooldownScope = CooldownScope.USER;
+            if (pageNum <= 1) {
+                bm.addChoices(getEmojis(suggestions.get(pageNum - 1).size()))
+                        .addChoice(EmojiManager.getForAlias("small_red_triangle").getUnicode())
+                        .addChoice(EmojiManager.getForAlias("x").getUnicode());
+            } else if (pageNum >= suggestions.size()) {
+                bm.addChoice(EmojiManager.getForAlias("small_red_triangle_down").getUnicode())
+                        .addChoices(getEmojis(suggestions.get(pageNum - 1).size()))
+                        .addChoice(EmojiManager.getForAlias("x").getUnicode());
+            } else {
+                bm.addChoice(EmojiManager.getForAlias("small_red_triangle_down").getUnicode())
+                        .addChoices(getEmojis(suggestions.get(pageNum - 1).size()))
+                        .addChoice(EmojiManager.getForAlias("small_red_triangle").getUnicode())
+                        .addChoice(EmojiManager.getForAlias("x").getUnicode());
+            }
+        }
+        bm.build().display(m);
     }
 
 }

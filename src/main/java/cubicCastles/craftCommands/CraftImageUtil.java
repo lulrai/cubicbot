@@ -223,10 +223,10 @@ class CraftImageUtil {
 
             FontMetrics fm = backG.getFontMetrics();
             int textY = 30;
-            int textX = (textBg.getWidth() - fm.stringWidth(names.get(names.size()-1))) / 2;
+            int textX = (textBg.getWidth() - fm.stringWidth(names.get(names.size()-1).trim())) / 2;
             Graphics textG = textBg.getGraphics();
             textG.setFont(backG.getFont().deriveFont(12f));
-            textG.drawString(names.get(names.size()-1), textX, textY);
+            textG.drawString(names.get(names.size()-1).trim(), textX, textY);
 
             backG.drawImage(textBg, textPos[0], textPos[1], null);
 

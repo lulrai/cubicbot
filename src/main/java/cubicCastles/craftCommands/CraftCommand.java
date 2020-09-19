@@ -1,6 +1,5 @@
 package cubicCastles.craftCommands;
 
-import botOwnerCommands.ExceptionHandler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
@@ -9,12 +8,8 @@ import com.vdurmont.emoji.EmojiManager;
 import com.vdurmont.emoji.EmojiParser;
 import core.Cubic;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.utils.AttachmentOption;
 import normalCommands.bingo.BingoItem;
 import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
@@ -30,7 +25,6 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.file.Path;
@@ -38,6 +32,8 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static normalCommands.bingo.BingoItem.emojiToNumber;
 import static normalCommands.bingo.BingoItem.getEmojis;
@@ -52,9 +48,12 @@ public class CraftCommand extends Command {
         this.aliases = new String[]{"craftinfo", "ci", "recipe"};
         this.arguments = "itemName";
         this.category = new Category("Cubic Castles");
-        this.cooldown = 5;
         this.ownerCommand = false;
         this.waiter = waiter;
+    }
+
+    public static Map<Integer, List<String>> partition(final List<String> list, final int pageSize) {
+        return IntStream.iterate(0, i -> i + pageSize).limit((list.size() + pageSize - 1) / pageSize).boxed().collect(Collectors.toMap(i -> i / pageSize, i -> list.subList(i, Integer.min(i + pageSize, list.size()))));
     }
 
     private static Boolean checkStrings(String str1, String str2) {
@@ -87,10 +86,14 @@ public class CraftCommand extends Command {
         String givenName = event.getMessage().getContentRaw().split(" ", 2)[1].trim();
 
         try {
+            if(givenName.length() < 3){
+                Msg.bad(event, "The name provided is too short. Please provide at least 3 characters long argument.");
+                return;
+            }
             runCommand(givenName, msg, channel, event);
         } catch (Exception e) {
             e.printStackTrace();
-            ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "CraftCommand.java");
+            //ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "CraftCommand.java");
         }
     }
 
@@ -121,7 +124,7 @@ public class CraftCommand extends Command {
     private void runCommand(String givenName, Message msg, TextChannel channel, CommandEvent event) throws IOException {
         EmbedBuilder em = new EmbedBuilder();
 
-        String basePicURL = "http://cubiccastles.com/recipe_html/";
+        String basePicURL = "https://cubiccastles.com/recipe_html/";
 
         Path workingDir = Paths.get(System.getProperty("user.dir"));
         File guildDir = new File(workingDir.resolve("db/global").toUri());
@@ -134,7 +137,8 @@ public class CraftCommand extends Command {
         em.setTitle(title);
         em.setColor(Color.CYAN);
 
-        StringBuilder suggestions = new StringBuilder();
+//        StringBuilder suggestions = new StringBuilder();
+        ArrayList<String> suggestionList = new ArrayList<>();
 
         Document doc = Jsoup.parse(CacheUtils.getCache("craft"));
 
@@ -185,9 +189,13 @@ public class CraftCommand extends Command {
                 Elements itemList = itemDiv.get(i).select("tr");
                 for (Element element : itemList) {
                     Elements td = element.select("td");
-                    if (checkSimilarStrings(td.get(td.size() - 1).text().trim(), givenName) && count <= 8) {
+                    if (checkSimilarStrings(td.get(td.size() - 1).text().trim(), givenName)) {
+                        if(count == 5){
+                            count = 0;
+                        }
                         count++;
-                        suggestions.append(BingoItem.numberToEmoji(count)).append(" ").append(td.get(td.size() - 1).text().trim()).append("\n");
+                        //suggestions.append(BingoItem.numberToEmoji(count)).append(" ").append(td.get(td.size() - 1).text().trim()).append("\n");
+                        suggestionList.add(BingoItem.numberToEmoji(count) + " " + td.get(td.size()-1).text().trim());
                     }
                     if (checkStrings(td.get(td.size() - 1).text().trim(), givenName)) {
                         msg.editMessage("Recipe found.. Fetching info and creating the image..").queue();
@@ -203,18 +211,18 @@ public class CraftCommand extends Command {
                                 itemType.trim().equalsIgnoreCase("Cooking") ||
                                 itemType.trim().equalsIgnoreCase("Cut-O-Matik")) {
 
-                            List<String> splitIngridients = Arrays.asList(td.first().text().split("\\+ "));
+                            List<String> splitIngridients = Arrays.asList(td.first().text().trim().split("\\+", -1));
                             ingrSize = splitIngridients.size();
                             words.addAll(splitIngridients);
                             words.add(td.last().text().trim());
-
+                            itemName = getString(basePicURL, guildDir, td, itemImages, itemMult, words);
                         } else if (itemType.trim().equalsIgnoreCase("Crafting Recipes with Tools")) {
 
                             List<String> splitIngridients = Arrays.asList(td.first().text().split("\\+ "));
                             ingrSize = splitIngridients.size();
                             words.addAll(splitIngridients);
                             words.add(td.get(1).text().trim());
-
+                            itemName = getString(basePicURL, guildDir, td, itemImages, itemMult, words);
                         } else if (itemType.trim().equalsIgnoreCase("Forging Items") ||
                                 itemType.trim().equalsIgnoreCase("Ingredient Extraction") ||
                                 itemType.trim().equalsIgnoreCase("Distillation")) {
@@ -223,12 +231,13 @@ public class CraftCommand extends Command {
                             String process = td.select("center").first().text();
 
                             words.add(ingrUsed);
+                            itemName = getString(basePicURL, guildDir, td, itemImages, itemMult, words);
                             words.add(process);
+
                             ingrSize = 1;
                         } else {
                             return;
                         }
-                        itemName = getString(basePicURL, guildDir, td, itemImages, itemMult, words);
                         itemImage.add(CraftImageUtil.getCompleted(ingrSize, itemImages, itemMult, words, itemType.trim(), itemName));
                         itemDesc = "How to Craft " + itemName;
 
@@ -248,47 +257,78 @@ public class CraftCommand extends Command {
                     }
                 }
             }
-            if (suggestions.length() == 0) {
+            if (suggestionList.size() == 0) {
                 em.setDescription("Item Not Found.");
                 msg.editMessage(em.build()).queue();
             } else {
-                if (suggestions.length() >= MessageEmbed.TEXT_MAX_LENGTH) {
-                    em.setDescription("Too long of a suggestion list. Please type more characters so that the bot can suggest items.");
-                    msg.editMessage(em.build()).queue();
-                } else {
-                    new ButtonMenu.Builder()
-                            .setDescription("Could not find an item with that name. Here are some possible suggestions.\n" +
-                                    suggestions.toString().trim())
-                            .setChoices(getEmojis(count))
-                            .addChoice(EmojiManager.getForAlias("x").getUnicode())
-                            .setEventWaiter(waiter)
-                            .setUsers(event.getAuthor())
-                            .setTimeout(20, TimeUnit.SECONDS)
-                            .setColor(Color.orange)
-                            .setAction(v -> {
-                                if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":x:")) {
-                                    Msg.reply(channel, "Cancelled choosing a crafting recipe.");
-                                }
-                                else{
-                                    int choice = emojiToNumber(EmojiParser.parseToAliases(v.getEmoji()));
-                                    if(choice == 0){
-                                        Msg.bad(channel, "Invalid choice from the suggestion list.");
-                                    }
-                                    else {
-                                        String[] split = suggestions.toString().replaceAll(":.+?:", "").split("\n");
-                                        try {
-                                            runCommand(split[choice-1].trim(), msg, channel, event);
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                        }
-                                    }
-                                }
-                            })
-                            .setFinalAction(me -> {
-                                me.delete().queue();
-                            }).build().display(channel);
-                }
+                final Map<Integer, List<String>> paginatedCommands = partition(suggestionList, 5);
+                buildMenu(event, paginatedCommands, 1, msg);
             }
         }
+    }
+
+    private void buildMenu(CommandEvent event, Map<Integer, List<String>> suggestions, int pageNum, Message m){
+        StringBuilder sb = new StringBuilder();
+        for(String s : suggestions.get(pageNum-1)) sb.append(s).append("\n");
+        ButtonMenu.Builder bm = new ButtonMenu.Builder()
+                .setDescription("Could not find an item with that name. Here are some possible suggestions.\n" +
+                        sb.toString().trim() + "\n\n" + "Page: " + pageNum + "/" + suggestions.size())
+                .setEventWaiter(waiter)
+                .setUsers(event.getAuthor())
+                .setTimeout(20, TimeUnit.SECONDS)
+                .setColor(Color.orange)
+                .setAction(v -> {
+                    if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":x:")) {
+                        Msg.reply(event.getTextChannel(), "Cancelled choosing a crafting recipe.");
+                        m.delete().queue();
+                    }
+                    else if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":small_red_triangle:")){
+                        buildMenu(event, suggestions, pageNum+1, m);
+                    }
+                    else if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":small_red_triangle_down:")){
+                        buildMenu(event, suggestions, pageNum-1, m);
+                    }
+                    else{
+                        int choice = emojiToNumber(EmojiParser.parseToAliases(v.getEmoji()));
+                        if(choice == 0){
+                            Msg.bad(event.getTextChannel(), "Invalid choice from the suggestion list.");
+                        }
+                        else {
+                            try {
+                                runCommand(suggestions.get(pageNum-1).get(choice-1).replaceAll(":.+?:", "").trim(), m, event.getTextChannel(), event);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                })
+                .setFinalAction(me -> {
+                    try {
+                        me.clearReactions().queue();
+                    }catch (Exception ignored) { }
+                });
+        if(pageNum == 1 && suggestions.size() == 1){
+            bm.addChoices(getEmojis(suggestions.get(pageNum-1).size()))
+                    .addChoice(EmojiManager.getForAlias("x").getUnicode());
+        }
+        else {
+            this.cooldown = 10;
+            this.cooldownScope = CooldownScope.USER;
+            if (pageNum <= 1) {
+                bm.addChoices(getEmojis(suggestions.get(pageNum - 1).size()))
+                        .addChoice(EmojiManager.getForAlias("small_red_triangle").getUnicode())
+                        .addChoice(EmojiManager.getForAlias("x").getUnicode());
+            } else if (pageNum >= suggestions.size()) {
+                bm.addChoice(EmojiManager.getForAlias("small_red_triangle_down").getUnicode())
+                        .addChoices(getEmojis(suggestions.get(pageNum - 1).size()))
+                        .addChoice(EmojiManager.getForAlias("x").getUnicode());
+            } else {
+                bm.addChoice(EmojiManager.getForAlias("small_red_triangle_down").getUnicode())
+                        .addChoices(getEmojis(suggestions.get(pageNum - 1).size()))
+                        .addChoice(EmojiManager.getForAlias("small_red_triangle").getUnicode())
+                        .addChoice(EmojiManager.getForAlias("x").getUnicode());
+            }
+        }
+        bm.build().display(m);
     }
 }

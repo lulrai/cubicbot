@@ -91,7 +91,7 @@ public class CacheUtils {
     }
 
     private static void setData(String url, int time) {
-        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(10);
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(12);
         try {
             StringBuilder html = new StringBuilder();
             scheduler.scheduleAtFixedRate(() -> {

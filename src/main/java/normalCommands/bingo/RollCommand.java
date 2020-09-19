@@ -30,7 +30,9 @@ public class RollCommand extends Command {
 
     @Override
     protected void execute(CommandEvent event) {
-        if(!event.getGuild().getId().equals("240614697848537089") && !event.getGuild().getId().equals("365932526297939971") && !event.getGuild().getId().equals("705622006652993607")) return;
+        boolean isFromBingo = event.getGuild().getCategoryById("756887929808224258").getTextChannels().parallelStream().anyMatch(c -> event.getTextChannel().getId().equals(c.getId()));
+        if(!event.getGuild().getId().equals("240614697848537089") && !event.getGuild().getId().equals("705622006652993607") && !isFromBingo) return;
+
         if(!(event.getMember().hasPermission(Permission.ADMINISTRATOR) ||
                 (event.getAuthor().getId().equals("169122787099672577")
                         || event.getAuthor().getId().equals("222488511385698304")
@@ -59,7 +61,7 @@ public class RollCommand extends Command {
 
             storeItem(itemName);
 
-            File bingoPool = new File(guildDir, itemName+".txt");
+            File bingoPool = new File(guildDir, itemName+".png");
             Message image = Cubic.getJDA().getTextChannelById("740309750369091796").sendFile(bingoPool, URLEncoder.encode(bingoPool.getName(),"utf-8")).complete();
 
             EmbedBuilder em = new EmbedBuilder();

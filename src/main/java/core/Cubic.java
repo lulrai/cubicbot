@@ -10,6 +10,8 @@ import cubicCastles.auction.AuctionCommand;
 import cubicCastles.auction.BidCommand;
 import cubicCastles.craftCommands.CraftCommand;
 import cubicCastles.craftCommands.Item;
+import cubicCastles.user.ProfileEditCommand;
+import cubicCastles.user.ProfileReadWrite;
 import information.BotInfoCommand;
 import information.HelpCommand;
 import modCommands.*;
@@ -25,7 +27,9 @@ import utils.Constants;
 
 import javax.security.auth.login.LoginException;
 import java.awt.*;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
@@ -45,6 +49,9 @@ public class Cubic {
         RollCommand.initializeChosenCache();
         BingoItem.initializeItemPools();
 
+        // Initialize Profiles
+        ProfileReadWrite.loadAllUsers();
+
         EventWaiter waiter = new EventWaiter();
         jda = new JDABuilder(AccountType.BOT)
 //                .setToken(Constants.BOT_RELEASE_CODE)
@@ -56,6 +63,29 @@ public class Cubic {
         Logger.getLogger("org.apache.http.client.protocol.ResponseProcessCookies").setLevel(Level.OFF);
         jda.awaitStatus(JDA.Status.CONNECTED);
 
+        Path workingDir = Paths.get(System.getProperty("user.dir"));
+        File guildDir = new File(workingDir.resolve("db/cards/items").toUri());
+        File outFile = new File(guildDir, "bingoPool.txt");
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(outFile));
+            String line;
+            while ((line = br.readLine()) != null) {
+                boolean isPresent = false;
+                for(String s : guildDir.list()){
+                    if(s.replaceAll(".png","").equalsIgnoreCase(line.split(",")[1])){
+                        isPresent = true;
+                        break;
+                    }
+                }
+                if(!isPresent){
+                    System.out.println(line);
+                }
+            }
+            br.close();
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+
         autoClearCache();
 
         //Help Command
@@ -64,8 +94,9 @@ public class Cubic {
 
     private static void autoClearCache() {
         try {
-            ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(10);
+            ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
             scheduler.scheduleAtFixedRate(() -> {
+                cubicCastles.user.ProfileCommand.checkForBirthdays();
                 PriceCommand.populatePrices();
                 for (Item i :CraftCommand.imgCache.values()) {
                     i.getImage().delete();
@@ -80,7 +111,7 @@ public class Cubic {
                         file.delete();
                 }
 
-            }, 0, 1, TimeUnit.DAYS);
+            }, 0, 24, TimeUnit.HOURS);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -140,6 +171,10 @@ public class Cubic {
                         new GameRules(),
                         new NewsCommand(),
 
+                        // Profile Commands
+                        new ProfileEditCommand(waiter),
+                        new cubicCastles.user.ProfileCommand(),
+
                         //Moderation
                         new ClearCommand(),
                         new MuteCommand(),
@@ -152,6 +187,7 @@ public class Cubic {
                         new UnbanCommand(),
                         new AuctionSet(),
                         new ModLogSet(),
+                        new ModText(),
 
                         //Prices
                         new OldPriceCommand(),
