@@ -20,6 +20,7 @@ public class HelpCommand extends Command {
     private static Map<String, String> informativeHelp = new HashMap<>();
     private static Map<String, String> modHelp = new HashMap<>();
     private static Map<String, String> adminHelp = new HashMap<>();
+    private static Map<String, String> bingoHelp = new HashMap<>();
     public HelpCommand() {
         this.name = "help";
         this.aliases = new String[]{"halp"};
@@ -38,14 +39,16 @@ public class HelpCommand extends Command {
         cubicHelp.put("gamerules", "Shows the entire list of game rules. (It's really long)");
         cubicHelp.put("item <itemName>", "Displays info about the provided item name.");
         cubicHelp.put("craft <itemName>", "Displays info and the crafting process of the provided item name.");
-        //cubicHelp.put("report", "Allows users to send a support ticket directly to the Cubic Castles website. Please do not use it unnecessarily and your private information is protected but use it at your own risk.");
-        cubicHelp.put("staff", "Displays a list of current and retired Cubic Castles Staffs updated from the [forum post](http://forums2.cubiccastles.com/index.php?p=/discussion/12/staff-list#latest)");
+        cubicHelp.put("news [version_number]", "Provides information about a certain version/update of the game.");
+        cubicHelp.put("staff", "Displays a list of current and retired Cubic Castles Staffs updated from the [Forum Post](http://forums2.cubiccastles.com/index.php?p=/discussion/12/staff-list#latest)");
         cubicHelp.put("perks [name]", "Displays all the perks available (w/o arguments) or information about the provided perk.");
-        cubicHelp.put("price <packName>", "Displays an image of the list of prices taken from the [forum post](http://forums2.cubiccastles.com/index.php?p=/discussion/4169/cubic-castles-prices/p1)");
-        cubicHelp.put("status", "Displays the current infomation about server status, number of players and current CC time.");
-        cubicHelp.put("announcements", "Displays the announcements from the forums.");
-        cubicHelp.put("profile <userID>", "Finds and gets information about your profile based on the given userID. Ex: http://prntscr.com/hpe7wo");
+        cubicHelp.put("price <itemName>", "Provides the price of the item with the item name provided. Uses [V's Forum Post](https://forums2.cubiccastles.com/index.php?p=/discussion/27821/cubic-castles-prices#latest) for the prices.");
+        cubicHelp.put("oldprice <packName>", "Displays an image of the list of prices taken from the [Superxtreme's Forum Post](http://forums2.cubiccastles.com/index.php?p=/discussion/4169/cubic-castles-prices/p1)");
+        cubicHelp.put("status", "Displays the current information about server status, number of players and current CC time.");
+        cubicHelp.put("profile [@user]", "Displays your own profile or a profile of another user.");
+        cubicHelp.put("profileedit", "Edit your profile to change, add, or remove certain aspects.");
         cubicHelp.put("auction", "Create an auction with the given information.");
+        cubicHelp.put("bid <auction_post_id> <amount>", "Bids the provided amount to the bid post provided the proper id of the bid.");
     }
 
     private static void normalHelp() {
@@ -54,15 +57,16 @@ public class HelpCommand extends Command {
 
     private static void informativeHelp() {
         informativeHelp.put("help [cmd]", "Displays this message or detail about a certain command if argument is provided.");
-        informativeHelp.put("commandlist", "Displays the list of all the extra commands available in the server.");
         informativeHelp.put("botinfo", "Displays information about the bot.");
     }
 
     private static void modHelp() {
+        modHelp.put("modtext <text>", "Sends a message with the given text as an embed with your role color.");
         modHelp.put("clear [@user] [num]", "Clears the given amount of messages in the channel with or w/o args.");
         modHelp.put("mute <@user> <time>", "Mutes the mentioned user in **the channel only** for the provided time, if provided.");
         modHelp.put("unmute <@user>", "Unmutes a mentioned-muted user.");
         modHelp.put("poll <topic> | [option1] | [option2]", "Creates a poll with the provided options or just the topic. Separate by using `|`.");
+        modHelp.put("birthday", "Gives an option to get all the recorded birthdays of users in a server or a specific month.");
         modHelp.put("warn <@user> [reason]", "Warns the user and log it on the modlog channel, if present.\n"
                 + "The warning points work as follows:\n"
                 + "1 warning point  = no consequences\n"

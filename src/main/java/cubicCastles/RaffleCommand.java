@@ -13,6 +13,7 @@ import utils.CacheUtils;
 
 import java.awt.*;
 
+@Deprecated
 public class RaffleCommand extends Command {
     public RaffleCommand() {
         this.name = "announcements";
