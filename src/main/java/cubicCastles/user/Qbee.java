@@ -1,14 +1,14 @@
 package cubicCastles.user;
 
-import java.time.LocalDate;
-import java.time.Period;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 
 public class Qbee {
     private String userID;
     private Birthday birthday;
     private String gameName;
+    private String profilePic;
+    private String forumLink;
     private String joinDate;
     private String favoriteItem;
     private String about;
@@ -19,8 +19,9 @@ public class Qbee {
 
     public Qbee() {}
 
-    public Qbee(String userID) {
+    public Qbee(String userID, String profilePic) {
         this.userID = userID;
+        this.profilePic = profilePic;
     }
 
     public String getUserID() {
@@ -41,6 +42,22 @@ public class Qbee {
 
     public void setGameName(String gameName) {
         this.gameName = gameName;
+    }
+
+    public String getProfilePic() {
+        return profilePic;
+    }
+
+    public void setProfilePic(String profilePic) {
+        this.profilePic = profilePic;
+    }
+
+    public String getForumLink() {
+        return forumLink;
+    }
+
+    public void setForumLink(String forumLink) {
+        this.forumLink = forumLink;
     }
 
     public String getJoinDate() { return joinDate; }
@@ -140,6 +157,25 @@ public class Qbee {
         return Math.toIntExact(((int)(Long.parseLong(this.userID)/Math.pow(10,10))+this.level));
     }
 
+    static class QbeeSortingComparator implements Comparator<Qbee> {
 
+        @Override
+        public int compare(Qbee qbee1, Qbee qbee2) {
+            if(qbee1.getBirthday() == null || qbee2.getBirthday() == null) {
+                return -1;
+            }
+
+            // for comparison
+            int monthCompare = Integer.compare(qbee1.getBirthday().getMonth(), qbee2.getBirthday().getMonth());
+            int dayCompare = Integer.compare(qbee1.getBirthday().getDay(), qbee2.getBirthday().getDay());
+
+            // 2-level comparison using if-else block
+            if (monthCompare == 0) {
+                return ((dayCompare == 0) ? monthCompare : dayCompare);
+            } else {
+                return monthCompare;
+            }
+        }
+    }
 
 }

@@ -10,6 +10,8 @@ import cubicCastles.auction.AuctionCommand;
 import cubicCastles.auction.BidCommand;
 import cubicCastles.craftCommands.CraftCommand;
 import cubicCastles.craftCommands.Item;
+import cubicCastles.user.BirthdayCommand;
+import cubicCastles.user.DeleteProfileCommand;
 import cubicCastles.user.ProfileEditCommand;
 import cubicCastles.user.ProfileReadWrite;
 import information.BotInfoCommand;
@@ -54,8 +56,8 @@ public class Cubic {
 
         EventWaiter waiter = new EventWaiter();
         jda = new JDABuilder(AccountType.BOT)
-//                .setToken(Constants.BOT_RELEASE_CODE)
-                .setToken(Constants.BOT_TEST_CODE)
+                .setToken(Constants.BOT_RELEASE_CODE)
+//                .setToken(Constants.BOT_TEST_CODE)
                 .addEventListeners(commandClient(waiter).build(),waiter)
                 .setStatus(OnlineStatus.DO_NOT_DISTURB).build();
         jda.setAutoReconnect(true);
@@ -96,7 +98,6 @@ public class Cubic {
         try {
             ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
             scheduler.scheduleAtFixedRate(() -> {
-                cubicCastles.user.ProfileCommand.checkForBirthdays();
                 PriceCommand.populatePrices();
                 for (Item i :CraftCommand.imgCache.values()) {
                     i.getImage().delete();
@@ -110,7 +111,7 @@ public class Cubic {
                     if (!file.isDirectory())
                         file.delete();
                 }
-
+                ProfileReadWrite.checkForBirthdays();
             }, 0, 24, TimeUnit.HOURS);
         } catch (Exception e) {
             e.printStackTrace();
@@ -131,6 +132,7 @@ public class Cubic {
                         new RestartCommand(),
                         new GetLog(),
                         new Guilds(waiter),
+                        new DeleteProfileCommand(),
 
                         new AboutCommand(Color.CYAN, "and I'm here to make your experience with Cubic Castles even better!",
                                 new String[]{"Submitting Support Tickets", "Check Item Info", "Check Craft Info", "Check Staff List", "Check Perks Info", "Check Item Prices"},
@@ -174,6 +176,7 @@ public class Cubic {
                         // Profile Commands
                         new ProfileEditCommand(waiter),
                         new cubicCastles.user.ProfileCommand(),
+                        new BirthdayCommand(waiter),
 
                         //Moderation
                         new ClearCommand(),

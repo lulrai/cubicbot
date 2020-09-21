@@ -6,15 +6,19 @@ import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import com.jagrosh.jdautilities.menu.ButtonMenu;
 import com.vdurmont.emoji.EmojiManager;
 import com.vdurmont.emoji.EmojiParser;
-import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
+import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import normalCommands.bingo.BingoItem;
 import utils.Msg;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 public class ProfileEditCommand extends Command {
@@ -27,7 +31,6 @@ public class ProfileEditCommand extends Command {
         this.cooldown = 10;
         this.cooldownScope = CooldownScope.USER;
         this.waiter = waiter;
-        this.userPermissions = new Permission[]{Permission.BAN_MEMBERS};
     }
 
     @Override
@@ -44,9 +47,13 @@ public class ProfileEditCommand extends Command {
                         ":six: Add/Edit clan\n" +
                         ":seven: Add/Edit game join date\n" +
                         ":eight: Add/Remove realm\n" +
-                        ":nine: Add/Remove overworld")
+                        ":nine: Add/Remove overworld\n" +
+                        ":frame_photo: Add/Edit custom profile pic\n" +
+                        ":link: Add/Edit forum profile link")
                 .setEventWaiter(waiter)
                 .addChoices(BingoItem.getEmojis(9))
+                .addChoice(EmojiManager.getForAlias("picture_frame").getUnicode())
+                .addChoice(EmojiManager.getForAlias("link").getUnicode())
                 .addChoice(EmojiManager.getForAlias("x").getUnicode())
                 .setUsers(event.getAuthor())
                 .setTimeout(30, TimeUnit.SECONDS)
@@ -60,11 +67,64 @@ public class ProfileEditCommand extends Command {
                         }
                     }
                     if(index == -1){
-                        ProfileCommand.qbees.add(new Qbee(event.getAuthor().getId()));
+                        Qbee qbee = new Qbee(event.getAuthor().getId(), event.getAuthor().getEffectiveAvatarUrl());
+                        index = Collections.binarySearch(ProfileCommand.qbees, qbee, new Qbee.QbeeSortingComparator());
+                        index = ~index;
+                        ProfileCommand.qbees.add(index, qbee);
                     }
 
                     String choice = EmojiParser.parseToAliases(v.getEmoji());
                     switch(choice.trim()){
+                        case ":picture_frame:" : {
+                            displayMessage.delete().queue();
+                            Message m = Msg.replyRet(event, "Please type the link for your profile picture that you want or upload an image file.");
+                            waiter.waitForEvent(GuildMessageReceivedEvent.class,
+                                    e -> e.getAuthor().equals(event.getAuthor()) && e.getChannel().equals(event.getChannel()) && !e.getAuthor().isBot(),
+                                    e -> {
+                                        String profilePic = e.getMessage().getContentRaw().trim();
+                                        m.delete().queue();
+                                        if(!e.getMessage().getAttachments().isEmpty() && e.getMessage().getAttachments().get(0).isImage()){
+                                            profilePic = e.getMessage().getAttachments().get(0).getUrl();
+                                            //e.getMessage().delete().queue();
+                                        }
+                                        else {
+                                            e.getMessage().delete().queue();
+                                            try{
+                                                new URL(profilePic);
+                                            } catch (MalformedURLException ex) {
+                                                Msg.bad(event, "Invalid URL or no image file attached. Profile editing cancelled.");
+                                                return;
+                                            }
+                                        }
+                                        Qbee qbee = ProfileCommand.qbees.parallelStream().filter(p -> p.getUserID().equals(event.getAuthor().getId())).findFirst().get();
+                                        qbee.setProfilePic(profilePic);
+                                        ProfileReadWrite.updateUser(qbee);
+                                    },
+                                    1, TimeUnit.MINUTES, () -> Msg.replyTimed(event, "You took too long to respond, " + event.getAuthor().getAsMention() + "! Profile editing has been cancelled.", 10, TimeUnit.SECONDS));
+                            break;
+                        }
+                        case ":link:" : {
+                            displayMessage.delete().queue();
+                            Message m = Msg.replyRet(event, "Please type the link for forum profile if you have one.\n**NOTE** Link isn't visible but it makes the title of your profile clickable/tapable.");
+                            waiter.waitForEvent(GuildMessageReceivedEvent.class,
+                                    e -> e.getAuthor().equals(event.getAuthor()) && e.getChannel().equals(event.getChannel()) && !e.getAuthor().isBot(),
+                                    e -> {
+                                        String profileLink = e.getMessage().getContentRaw().trim();
+                                        m.delete().queue();
+                                        e.getMessage().delete().queue();
+                                        try{
+                                            new URL(profileLink);
+                                        } catch (MalformedURLException ex) {
+                                            Msg.bad(event, "Invalid link provided. Please provide a valid link. Profile editing cancelled.");
+                                            return;
+                                        }
+                                        Qbee qbee = ProfileCommand.qbees.parallelStream().filter(p -> p.getUserID().equals(event.getAuthor().getId())).findFirst().get();
+                                        qbee.setForumLink(profileLink);
+                                        ProfileReadWrite.updateUser(qbee);
+                                    },
+                                    1, TimeUnit.MINUTES, () -> Msg.replyTimed(event, "You took too long to respond, " + event.getAuthor().getAsMention() + "! Profile editing has been cancelled.", 10, TimeUnit.SECONDS));
+                            break;
+                        }
                         case ":one:" : {
                             displayMessage.delete().queue();
                             Message m = Msg.replyRet(event, "Please type what you want your in-game name to be.");
@@ -102,7 +162,7 @@ public class ProfileEditCommand extends Command {
                                         qbee.setAbout(about);
                                         ProfileReadWrite.updateUser(qbee);
                                     },
-                                    30, TimeUnit.SECONDS, () -> Msg.replyTimed(event, "You took too long to respond, " + event.getAuthor().getAsMention() + "! Profile editing has been cancelled.", 10, TimeUnit.SECONDS));
+                                    2, TimeUnit.MINUTES, () -> Msg.replyTimed(event, "You took too long to respond, " + event.getAuthor().getAsMention() + "! Profile editing has been cancelled.", 10, TimeUnit.SECONDS));
                             break;
                         }
                         case ":three:" : {
@@ -198,7 +258,7 @@ public class ProfileEditCommand extends Command {
                         }
                         case ":seven:" : {
                             displayMessage.delete().queue();
-                            Message m = Msg.replyRet(event, "Enter the date when you joined/started playing Cubic Castles.");
+                            Message m = Msg.replyRet(event, "Enter the date when you joined/started playing Cubic Castles. (Ex: 07/10/2016)");
                             waiter.waitForEvent(GuildMessageReceivedEvent.class,
                                     e -> e.getAuthor().equals(event.getAuthor()) && e.getChannel().equals(event.getChannel()) && !e.getAuthor().isBot(),
                                     e -> {
@@ -211,7 +271,8 @@ public class ProfileEditCommand extends Command {
                                                     "Profile editing cancelled.");
                                             return;
                                         }
-                                        LocalDate givenDate = LocalDate.parse(date.replaceAll("/", "-"), DateTimeFormatter.ofPattern("MM-dd-yyyy"));
+                                        SimpleDateFormat sdf = new SimpleDateFormat("MM-dd-yyyy");
+                                        LocalDate givenDate = LocalDate.parse(sdf.format(date.replaceAll("/", "-")), DateTimeFormatter.ofPattern("MM-dd-yyyy"));
                                         LocalDate oldestDate = LocalDate.of(2014, Month.MAY, 1);
                                         if(!givenDate.isAfter(oldestDate) || !givenDate.isBefore(LocalDate.now().plusDays(1))){
                                             Msg.bad(event, "Date cannot be before May 1st, 2014 or after TODAY." +
@@ -219,7 +280,7 @@ public class ProfileEditCommand extends Command {
                                             return;
                                         }
                                         Qbee qbee = ProfileCommand.qbees.parallelStream().filter(p -> p.getUserID().equals(event.getAuthor().getId())).findFirst().get();
-                                        qbee.setJoinDate(givenDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                                        qbee.setJoinDate(givenDate.format(DateTimeFormatter.ofPattern("MM/dd/yyyy")));
                                         ProfileReadWrite.updateUser(qbee);
                                     },
                                     30, TimeUnit.SECONDS, () -> Msg.replyTimed(event, "You took too long to respond, " + event.getAuthor().getAsMention() + "! Profile editing has been cancelled.", 10, TimeUnit.SECONDS));
@@ -365,7 +426,9 @@ public class ProfileEditCommand extends Command {
                                     })
                                     .setFinalAction(me -> {
                                         try {
-                                        }catch (Exception ignored) { }
+                                            me.delete().queue();
+                                        }catch (ErrorResponseException ignored) { }
+                                        catch (Exception ignored) { }
                                     }).build().display(displayMessage);
                             break;
                         }

@@ -2,15 +2,16 @@ package cubicCastles.user;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Comparator;
 import java.util.Date;
 
 public class Birthday {
-    private String month;
-    private String day;
+    private int month;
+    private int day;
 
     public Birthday() {}
 
-    private Birthday(String month, String day) {
+    private Birthday(int month, int day) {
         this.month = month;
         this.day = day;
     }
@@ -18,7 +19,7 @@ public class Birthday {
     public static Birthday parseBirthday(String birthday){
         if(isThisDateValid(birthday.trim(), "MM/dd") || isThisDateValid(birthday.trim(), "MM-dd")){
             String[] date = birthday.split("[-/]");
-            return new Birthday(numToMonth(date[0]), date[1]);
+            return new Birthday(Integer.parseInt(date[0]), Integer.parseInt(date[1]));
         }
         else{
             return null;
@@ -36,42 +37,29 @@ public class Birthday {
         try {
             Date date = sdf.parse(dateToValidate);
         } catch (ParseException e) {
-            e.printStackTrace();
             return false;
         }
         return true;
     }
 
-    public String getMonth() {
-        return month;
+    public int getMonth() {
+        return this.month;
     }
 
-    public int getMonthNum() {
-        return monthToNum(this.month);
-    }
-
-    public String getDay() {
-        return day;
-    }
-
-    public int getDayNum() {
-        return Integer.parseInt(day.trim());
+    public int getDay() {
+        return this.day;
     }
 
     public void setMonth(String month) {
-        this.month = numToMonth(month);
-    }
-
-    public void setDay(String day) {
-        this.day = day;
+        this.month = Integer.parseInt(month);
     }
 
     public void setDay(int day) {
-        this.day = String.valueOf(day);
+        this.day = day;
     }
 
-    private static String numToMonth(String month){
-        switch(Integer.parseInt(month.trim())){
+    public static String numToMonth(int month){
+        switch(month){
             case 1 : return "January";
             case 2 : return "February";
             case 3 : return "March";
@@ -88,21 +76,22 @@ public class Birthday {
         }
     }
 
-    private int monthToNum(String month){
-        switch (month.trim()){
-            case "January" : return 1;
-            case "February" : return 2;
-            case "March" : return 3;
-            case "April" : return 4;
-            case "May" : return 5;
-            case "June" : return 6;
-            case "July" : return 7;
-            case "August" : return 8;
-            case "September" : return 9;
-            case "October" : return 10;
-            case "November" : return 11;
-            case "December" : return 12;
+    public static int monthToNum(String month){
+        switch (month.toLowerCase().trim()){
+            case "january" : return 1;
+            case "february" : return 2;
+            case "march" : return 3;
+            case "april" : return 4;
+            case "may" : return 5;
+            case "june" : return 6;
+            case "july" : return 7;
+            case "august" : return 8;
+            case "september" : return 9;
+            case "october" : return 10;
+            case "november" : return 11;
+            case "december" : return 12;
             default : return -1;
         }
     }
 }
+

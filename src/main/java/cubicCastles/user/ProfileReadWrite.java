@@ -4,6 +4,10 @@ import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import core.Cubic;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.User;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,6 +15,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDate;
+import java.util.Collections;
 
 public class ProfileReadWrite {
     public static void updateUser(Qbee qbee) {
@@ -67,7 +73,39 @@ public class ProfileReadWrite {
             return;
         }
         for (String userID : files) {
-            ProfileCommand.qbees.add(getUser(userID.replaceAll("[^0-9]", "")));
+            if(!userID.endsWith("-backup.json")){
+                Qbee qbee = getUser(userID.replaceAll("[^0-9]", ""));
+                int index = Collections.binarySearch(ProfileCommand.qbees, qbee, new Qbee.QbeeSortingComparator());
+                if(index < 0) {
+                    index = ~index;
+                    ProfileCommand.qbees.add(index, qbee);
+                }
+            }
+        }
+    }
+
+    public static void checkForBirthdays(){
+        for(Qbee q : ProfileCommand.qbees){
+            User user = Cubic.getJDA().getUserById(q.getUserID());
+            if(user.getMutualGuilds().size() == 0) return;
+            if(q.getBirthday().getDay() == LocalDate.now().getMonthValue() && q.getBirthday().getMonth() == LocalDate.now().getDayOfMonth()){
+                for(Guild guild : user.getMutualGuilds()){
+                    Role birthdayRole = guild.getRoles().parallelStream().filter(r -> r.getName().toLowerCase().contains("birthday")).findFirst().orElse(null);
+                    if(birthdayRole == null) return;
+                    if(guild.getMember(Cubic.getJDA().getSelfUser()).canInteract(birthdayRole)) {
+                        guild.addRoleToMember(guild.getMember(user), birthdayRole).queue();
+                    }
+                }
+            }
+            else {
+                for(Guild guild : user.getMutualGuilds()){
+                    Role birthdayRole = guild.getRoles().parallelStream().filter(r -> r.getName().toLowerCase().contains("birthday")).findFirst().orElse(null);
+                    if(birthdayRole == null) return;
+                    if(guild.getMember(Cubic.getJDA().getSelfUser()).canInteract(birthdayRole)) {
+                        guild.removeRoleFromMember(guild.getMember(user), birthdayRole).queue();
+                    }
+                }
+            }
         }
     }
 }

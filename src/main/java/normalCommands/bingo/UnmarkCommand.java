@@ -98,7 +98,6 @@ public class UnmarkCommand extends Command {
 
                     if(red == 255 && green == 0 && blue == 0){
                         if(!choice.equalsIgnoreCase(s)) {
-                            System.out.println(s);
                             gBoard.drawImage(cross.getScaledInstance((int)dim.getWidth(), (int)dim.getHeight(), Image.SCALE_SMOOTH), position.get(s)[0]-60, position.get(s)[1]-40, null);
                         }
                     }

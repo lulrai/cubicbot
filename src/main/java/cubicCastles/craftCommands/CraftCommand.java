@@ -319,12 +319,12 @@ public class CraftCommand extends Command {
                         .addChoice(EmojiManager.getForAlias("small_red_triangle").getUnicode())
                         .addChoice(EmojiManager.getForAlias("x").getUnicode());
             } else if (pageNum >= suggestions.size()) {
-                bm.addChoice(EmojiManager.getForAlias("small_red_triangle_down").getUnicode())
-                        .addChoices(getEmojis(suggestions.get(pageNum - 1).size()))
+                bm.addChoices(getEmojis(suggestions.get(pageNum - 1).size()))
+                        .addChoice(EmojiManager.getForAlias("small_red_triangle_down").getUnicode())
                         .addChoice(EmojiManager.getForAlias("x").getUnicode());
             } else {
-                bm.addChoice(EmojiManager.getForAlias("small_red_triangle_down").getUnicode())
-                        .addChoices(getEmojis(suggestions.get(pageNum - 1).size()))
+                bm.addChoices(getEmojis(suggestions.get(pageNum - 1).size()))
+                        .addChoice(EmojiManager.getForAlias("small_red_triangle_down").getUnicode())
                         .addChoice(EmojiManager.getForAlias("small_red_triangle").getUnicode())
                         .addChoice(EmojiManager.getForAlias("x").getUnicode());
             }
