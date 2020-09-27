@@ -1,7 +1,7 @@
 package modCommands;
 
 import adminCommands.BanCommand;
-import adminCommands.ModLogSet;
+import settingCommands.ModLogSet;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -20,9 +20,15 @@ public class WarningCommand extends Command {
     public WarningCommand() {
         this.name = "warn";
         this.aliases = new String[]{"badboy", "badgirl"};
-        this.arguments = "@user";
+        this.arguments = "<@user>";
         this.category = new Category("Moderation");
-        this.ownerCommand = false;
+        this.help = "Warns the user and log it on the modlog channel, if present.\n" +
+                "The warning points work as follows:\n" +
+                "1 warning point  = no consequences\n" +
+                "2 warning points = one day ban\n" +
+                "3 warning points = five day ban\n" +
+                "4 warning points = permanent ban";
+        this.guildOnly = true;
     }
 
     @Override

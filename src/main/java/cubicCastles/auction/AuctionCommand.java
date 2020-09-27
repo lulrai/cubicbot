@@ -1,6 +1,6 @@
 package cubicCastles.auction;
 
-import adminCommands.AuctionSet;
+import settingCommands.AuctionSet;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
@@ -25,8 +25,10 @@ public class AuctionCommand extends Command {
         this.waiter = waiter;
         this.name = "auction";
         this.aliases = new String[]{};
-        this.category = new Category("Cubic Castles");
-        this.cooldown = 1;
+        this.category = new Category("cubic");
+        this.help = "Create an auction with the given information.";
+        this.cooldown = 10;
+        this.cooldownScope = CooldownScope.USER;
         this.guildOnly = true;
     }
 

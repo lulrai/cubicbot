@@ -1,6 +1,6 @@
 package utils;
 
-import adminCommands.ModLogSet;
+import settingCommands.ModLogSet;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import core.Cubic;
 import net.dv8tion.jda.api.EmbedBuilder;

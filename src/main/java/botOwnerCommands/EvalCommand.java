@@ -30,11 +30,11 @@ public class EvalCommand extends Command {
         try {
             String guildId = "";
             String allArgs;
-            if (event.getArgs().length() > 1) {
-                guildId = event.getArgs().split(" ")[0];
-                allArgs = event.getMessage().getContentRaw().split(" ", 3)[2];
+            if (event.getArgs().split(" ",2).length > 1 && event.getJDA().getGuildById(event.getArgs().split(" ",2)[0].trim()) != null) {
+                guildId = event.getArgs().split(" ", 2)[0].trim();
+                allArgs = event.getArgs().split(" ", 2)[1].trim();
             } else {
-                allArgs = event.getMessage().getContentRaw().split(" ", 2)[1];
+                allArgs = event.getArgs().trim();
             }
             Color c = Color.GREEN;
             EmbedBuilder em = new EmbedBuilder();
@@ -57,6 +57,7 @@ public class EvalCommand extends Command {
             se.put("embed", em);
             se.put("shardinfo", event.getJDA().getShardInfo());
             se.put("green", c);
+            se.put("Color", Color.class);
             try {
                 if (!guildId.isEmpty()) {
                     se.put("guild", event.getJDA().getGuildById(guildId));

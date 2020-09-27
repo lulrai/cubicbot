@@ -18,9 +18,10 @@ public class UnmuteCommand extends Command {
     public UnmuteCommand() {
         this.name = "unmute";
         this.aliases = new String[]{"unmoot"};
-        this.arguments = "@user";
+        this.arguments = "<@user>";
         this.category = new Category("Moderation");
-        this.ownerCommand = false;
+        this.help = "Unmutes a mentioned-muted user.";
+        this.guildOnly = true;
     }
 
     @Override
@@ -31,9 +32,11 @@ public class UnmuteCommand extends Command {
             Msg.bad(event, "USAGE" + ": " + Constants.D_PREFIX + "unmute <@user>");
             return;
         }
-        if (event.getMessage().getMentionedUsers().isEmpty() || event.getMessage().getMentionedUsers() == null) {
+        if (event.getMessage().getMentionedUsers().isEmpty()) {
             ErrorHandling.EMPTY_MENTION_ERROR.error(event);
             return;
+        } else {
+            event.getMessage().getMentionedUsers();
         }
         Member m = event.getGuild().getMember(event.getMessage().getMentionedUsers().get(0));
         Member auth = event.getGuild().getMember(event.getAuthor());

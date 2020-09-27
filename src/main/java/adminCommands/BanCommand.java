@@ -27,24 +27,28 @@ public class BanCommand extends Command {
         this.waiter = waiter;
         this.name = "ban";
         this.aliases = new String[]{"banhammer"};
-        this.arguments = "<@user> [time]";
-        this.category = new Category("Administrator");
-        this.ownerCommand = false;
+        this.arguments = "<@user|id> [time]";
+        this.help = "Ban the user tagged or provided id (OPTIONAL: for given time).";
+        this.category = new Category("Admin");
+        this.guildOnly = true;
     }
 
     @Override
     protected void execute(CommandEvent event) {
-        if (event.getArgs().length() < 1) {
+        if (event.getArgs().isEmpty()) {
             Msg.bad(event, "USAGE" + ": " + Constants.D_PREFIX + "ban <@user> [time(s)]");
             return;
         }
-        if (event.getMessage().getMentionedUsers() == null || event.getMessage().getMentionedUsers().isEmpty()) {
-            ErrorHandling.EMPTY_MENTION_ERROR.error(event);
-            return;
+        User target;
+        if (event.getMessage().getMentionedUsers().isEmpty()) {
+            target = event.getJDA().getUserById(event.getArgs().trim());
+            if(target == null) { ErrorHandling.EMPTY_MENTION_ERROR.error(event); return; }
         }
-        User target = event.getMessage().getMentionedUsers().get(0);
+        else {
+            target = event.getMessage().getMentionedUsers().get(0);
+        }
         Member auth = event.getGuild().getMember(event.getAuthor());
-        if (UserPermission.isAdmin(event, event.getAuthor()) && !auth.hasPermission(Permission.BAN_MEMBERS)) {
+        if (auth == null || !auth.hasPermission(Permission.BAN_MEMBERS)) {
             ErrorHandling.USER_PERMISSION_ERROR.error(event);
             return;
         }

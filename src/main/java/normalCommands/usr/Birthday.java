@@ -1,9 +1,8 @@
-package cubicCastles.user;
+package normalCommands.usr;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Comparator;
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 public class Birthday {
     private int month;
@@ -17,29 +16,27 @@ public class Birthday {
     }
 
     public static Birthday parseBirthday(String birthday){
-        if(isThisDateValid(birthday.trim(), "MM/dd") || isThisDateValid(birthday.trim(), "MM-dd")){
-            String[] date = birthday.split("[-/]");
-            return new Birthday(Integer.parseInt(date[0]), Integer.parseInt(date[1]));
+        LocalDate date = isThisDateValid(birthday.trim(), new String[]{"M/d/y", "M-d-y", "d/M/y", "d-M-y", "d.M.y", "M.d.y"});
+        if(date != null){
+            return new Birthday(date.getMonthValue(), date.getDayOfMonth());
         }
         else{
             return null;
         }
     }
 
-    public static boolean isThisDateValid(String dateToValidate, String format){
+    public static LocalDate isThisDateValid(String dateToValidate, String[] format){
         if(dateToValidate == null){
-            return false;
+            return null;
         }
 
-        SimpleDateFormat sdf = new SimpleDateFormat(format);
-        sdf.setLenient(false);
-
-        try {
-            Date date = sdf.parse(dateToValidate);
-        } catch (ParseException e) {
-            return false;
+        for(String f : format) {
+            try {
+                return LocalDate.parse(dateToValidate, DateTimeFormatter.ofPattern(f));
+            } catch (DateTimeParseException ignored) {
+            }
         }
-        return true;
+        return null;
     }
 
     public int getMonth() {

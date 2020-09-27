@@ -13,6 +13,7 @@ import com.vdurmont.emoji.EmojiManager;
 import com.vdurmont.emoji.EmojiParser;
 import cubicCastles.craftCommands.CraftCommand;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
@@ -46,15 +47,16 @@ public class PriceCommand extends Command
     public PriceCommand(EventWaiter waiter) {
         this.name = "price";
         this.aliases = new String[] { "prices", "pr" };
-        this.arguments = "itemName";
-        this.category = new Category("Cubic Castles");
-        this.ownerCommand = false;
+        this.arguments = "<itemName>";
+        this.category = new Category("cubic");
+        this.help = "Provides the price of the item with the item name provided. Uses [V's Forum Post](https://forums2.cubiccastles.com/index.php?p=/discussion/27821/cubic-castles-prices#latest) for the prices.";
         this.waiter = waiter;
+        this.guildOnly = false;
     }
 
     @Override
     protected void execute(final CommandEvent event) {
-        final Message msg = event.getChannel().sendMessage("Looking up the information..").complete();
+        Message msg = event.getChannel().sendMessage("Looking up the information..").complete();
         try {
             if (event.getArgs().isEmpty()) {
                 final EmbedBuilder em = new EmbedBuilder();
@@ -80,14 +82,14 @@ public class PriceCommand extends Command
                 }
                 final String givenItem = event.getArgs().trim();
                 if(givenItem.length() < 3){
-                    Msg.bad(event, "The name provided is too short. Please provide at least 3 characters long argument.");
+                    Msg.bad(event.getChannel(), "The name provided is too short. Please provide at least 3 characters long argument.");
                     return;
                 }
                 runCommand(givenItem, event, msg);
             }
         }
         catch (InsufficientPermissionException ex) {
-            event.getTextChannel().sendMessage(ex.getMessage()).queue();
+            event.getChannel().sendMessage(ex.getMessage()).queue();
         }
         catch (Exception e) {
             ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "PriceCommand.java");
@@ -108,14 +110,14 @@ public class PriceCommand extends Command
                 suggestionList.add(BingoItem.numberToEmoji(count) + " " + item.trim());
             }
             if (event.getMessage().getAuthor().getId().equals("169122787099672577") || event.getMessage().getAuthor().getId().equals("222488511385698304")){
-                if (event.getMessage().getMentionedMembers().size() > 0 && event.getMessage().getMentionedMembers().get(0).getUser().getId().equals("169122787099672577")) {
+                if (event.getMessage().getMentionedUsers().size() > 0 && event.getMessage().getMentionedUsers().get(0).getId().equals("169122787099672577")) {
                     em.setTitle("Absolutely Priceless");
                     em.setColor(Color.GREEN);
                     em.setDescription("I love you a lot, and you're priceless. So, suck it.");
                     msg.editMessage(em.build()).queue();
                     return;
                 }
-                else if (event.getMessage().getMentionedMembers().size() > 0 && event.getMessage().getMentionedMembers().get(0).getUser().getId().equals("222488511385698304")) {
+                else if (event.getMessage().getMentionedUsers().size() > 0 && event.getMessage().getMentionedUsers().get(0).getId().equals("222488511385698304")) {
                     em.setTitle("Less Priceless");
                     em.setColor(Color.GREEN);
                     em.setDescription("I love you a lot too, and you're priceless too. But less priceless than I am, suck it.");
@@ -166,8 +168,8 @@ public class PriceCommand extends Command
                 .setColor(Color.orange)
                 .setAction(v -> {
                     if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":x:")) {
-                        Msg.reply(event.getTextChannel(), "Cancelled choosing an item price.");
-                        m.delete().queue();
+                        Msg.reply(event.getChannel(), "Cancelled choosing an item price.");
+                        if(m.isFromType(ChannelType.TEXT)) m.delete().queue();
                     }
                     else if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":small_red_triangle:")){
                         buildMenu(event, suggestions, pageNum+1, m);
@@ -178,8 +180,8 @@ public class PriceCommand extends Command
                     else{
                         int choice = emojiToNumber(EmojiParser.parseToAliases(v.getEmoji()));
                         if(choice == 0){
-                            Msg.bad(event.getTextChannel(), "Invalid choice from the suggestion list.");
-                            m.delete().queue();
+                            Msg.bad(event.getChannel(), "Invalid choice from the suggestion list.");
+                            if(m.isFromType(ChannelType.TEXT)) m.delete().queue();
                         }
                         else {
                             runCommand(suggestions.get(pageNum-1).get(choice-1).replaceAll(":.+?:", "").trim(), event, m);
@@ -188,7 +190,7 @@ public class PriceCommand extends Command
                 })
                 .setFinalAction(me -> {
                     try {
-                        me.clearReactions().queue();
+                        if(me.isFromType(ChannelType.TEXT)) me.clearReactions().queue();
                     }catch (Exception ignored) { }
                 });
         if(pageNum == 1 && suggestions.size() == 1){

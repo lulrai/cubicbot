@@ -8,6 +8,7 @@ import com.vdurmont.emoji.EmojiManager;
 import com.vdurmont.emoji.EmojiParser;
 import core.Cubic;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.TextChannel;
 import normalCommands.bingo.BingoItem;
@@ -29,6 +30,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.NumberFormat;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -46,9 +48,9 @@ public class CraftCommand extends Command {
     public CraftCommand(EventWaiter waiter) {
         this.name = "craft";
         this.aliases = new String[]{"craftinfo", "ci", "recipe"};
-        this.arguments = "itemName";
-        this.category = new Category("Cubic Castles");
-        this.ownerCommand = false;
+        this.arguments = "<itemName> [num]";
+        this.help = "Displays info and the crafting process of the provided item name (for provided number of items, from 2 to 20000 (inclusive)).";
+        this.category = new Category("cubic");
         this.waiter = waiter;
     }
 
@@ -74,23 +76,38 @@ public class CraftCommand extends Command {
         return l;
     }
 
+    private static List<Integer> initMultList() {
+        final List<Integer> l = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            l.add(null);
+        }
+        return l;
+    }
+
     @Override
     protected void execute(CommandEvent event) {
         if (event.getArgs().isEmpty()) {
-            bad(event, "USAGE: " + Constants.D_PREFIX + "craft <item_name>");
+            bad(event, "USAGE: " + Constants.D_PREFIX + "craft <item_name> [num]");
             return;
         }
 
+        String givenName = event.getArgs().trim();
+        int count = -1;
+        try{
+            count = Integer.parseInt(event.getArgs().substring(event.getArgs().lastIndexOf(" ") + 1));
+            if(count <= 1 || count > 20000) count = -1;
+            givenName = givenName.substring(0, event.getArgs().lastIndexOf(" ") + 1).trim();
+        }catch (NumberFormatException ignored) {}
+
         Message msg = event.getChannel().sendMessage("Looking up the recipe..").complete();
         TextChannel channel = event.getTextChannel(); // = reference of a MessageChannel
-        String givenName = event.getMessage().getContentRaw().split(" ", 2)[1].trim();
 
         try {
             if(givenName.length() < 3){
                 Msg.bad(event, "The name provided is too short. Please provide at least 3 characters long argument.");
                 return;
             }
-            runCommand(givenName, msg, channel, event);
+            runCommand(givenName, count, msg, channel, event);
         } catch (Exception e) {
             e.printStackTrace();
             //ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "CraftCommand.java");
@@ -98,30 +115,59 @@ public class CraftCommand extends Command {
     }
 
     @NotNull
-    private String getString(String basePicURL, File guildDir, Elements td, List<BufferedImage> itemImages, List<BufferedImage> itemMult, List<String> words) throws IOException {
+    private String getString(String basePicURL, Elements td, List<BufferedImage> itemImages, List<BufferedImage> mults, List<Integer> itemMultNum, List<String> words, int cnt) throws IOException {
         String itemName;
         words.add(td.last().text().trim());
 
         int index = 0;
         for (Element eachtd : td) {
-            for (Element img : eachtd.select("img")) {
-                String style = img.attr("style");
-                String image = img.attr("src");
-                List<String> dni = Arrays.asList("2x.png", "3x.png", "4x.png", "5x.png", "6x.png", "obscured.png");
-                if (!dni.contains(image)) {
-                    itemImages.add(ImageIO.read(new URL(basePicURL + image)));
+            if(!eachtd.select("span[id=ITEMCARD]").isEmpty()) {
+                for (Element itemCard : eachtd.select("span[id=ITEMCARD]")) {
+                    Element style = itemCard.select("img[style]").first();
+                    if (style == null) {
+                        String image = itemCard.getElementById("IMAGE_CONTAINER").getElementsByTag("img").first().attr("src").trim();
+                        if (cnt != -1) {
+                            mults.add(index, createMultImage(cnt));
+                        }
+                        itemImages.add(ImageIO.read(new URL(basePicURL + image)));
+                    } else {
+                        String image = itemCard.getElementById("IMAGE_CONTAINER").getElementsByTag("img").first().attr("src").trim();
+                        int num = Integer.parseInt(style.attr("src").replaceAll("[^0-9]", ""));
+                        itemImages.add(ImageIO.read(new URL(basePicURL + image)));
+                        if (cnt != -1) {
+                            mults.add(index, createMultImage(cnt * num));
+                        } else {
+                            itemMultNum.add(index, num);
+                            mults.add(index, createMultImage(num));
+                        }
+                    }
                     index++;
                 }
-                if (!style.isEmpty()) {
-                    itemMult.add(index, ImageIO.read(new File(guildDir, image)));
-                }
             }
+        }
+        Elements resultElements = td.select("span[id=ITEMCARD_MARGIN]");
+        if(resultElements.size() > 1){
+            String toolImage = resultElements.first().getElementById("IMAGE_CONTAINER").getElementsByTag("img").first().attr("src").trim();
+            String resultImage = resultElements.last().getElementById("IMAGE_CONTAINER").getElementsByTag("img").first().attr("src").trim();
+            itemImages.add(ImageIO.read(new URL(basePicURL + toolImage)));
+            index++;
+            if (cnt != -1) {
+                mults.add(index, createMultImage(cnt));
+            }
+            itemImages.add(ImageIO.read(new URL(basePicURL + resultImage)));
+        }
+        else{
+            String resultImage = resultElements.first().getElementById("IMAGE_CONTAINER").getElementsByTag("img").first().attr("src").trim();
+            if (cnt != -1) {
+                mults.add(index, createMultImage(cnt));
+            }
+            itemImages.add(ImageIO.read(new URL(basePicURL + resultImage)));
         }
         itemName = td.last().text().trim();
         return itemName;
     }
 
-    private void runCommand(String givenName, Message msg, TextChannel channel, CommandEvent event) throws IOException {
+    private void runCommand(String givenName, int cnt, Message msg, TextChannel channel, CommandEvent event) throws IOException {
         EmbedBuilder em = new EmbedBuilder();
 
         String basePicURL = "https://cubiccastles.com/recipe_html/";
@@ -132,12 +178,10 @@ public class CraftCommand extends Command {
         String title = "Craft Info";
         String itemType;
         String itemName;
-        List<File> itemImage = new ArrayList<>();
         String itemDesc;
         em.setTitle(title);
         em.setColor(Color.CYAN);
 
-//        StringBuilder suggestions = new StringBuilder();
         ArrayList<String> suggestionList = new ArrayList<>();
 
         Document doc = Jsoup.parse(CacheUtils.getCache("craft"));
@@ -148,9 +192,22 @@ public class CraftCommand extends Command {
                 em.addField("Item Name", imgCache.get(key).getName(), true);
                 em.addField("Craft Type", imgCache.get(key).getType(), true);
                 em.setDescription(imgCache.get(key).getDesc());
-                File file = imgCache.get(key).getImage();
-                em.setImage("attachment://db/cache/" + URLEncoder.encode(file.getName(), "utf-8"));
-                channel.sendFile(file, URLEncoder.encode(file.getName(), "utf-8")).embed(em.build()).queue();
+                ArrayList<BufferedImage> itemMults = new ArrayList<>();
+                for(Integer i : imgCache.get(key).getItemMultNum()){
+                    if(i == null) {
+                        if(cnt != -1) itemMults.add(createMultImage(cnt));
+                        else itemMults.add(null);
+                    }
+                    else {
+                        itemMults.add(createMultImage(cnt*i));
+                    }
+                }
+                File file = CraftImageUtil.getCompleted(imgCache.get(key).getSize(), imgCache.get(key).getItemImages(), itemMults, imgCache.get(key).getWords(), imgCache.get(key).getType(), imgCache.get(key).getName());
+                Message image = Cubic.getJDA().getTextChannelById("740309750369091796").sendFile(file, URLEncoder.encode(file.getName(), "utf-8")).complete();
+                file.delete();
+                em.setImage(image.getAttachments().get(0).getUrl());
+                msg.editMessage(event.getAuthor().getAsMention()).queue();
+                msg.editMessage(em.build()).queue();
                 return;
             }
         }
@@ -203,6 +260,7 @@ public class CraftCommand extends Command {
 
                         List<BufferedImage> itemImages = new ArrayList<>();
                         List<BufferedImage> itemMult = initList();
+                        List<Integer> itemMultNum = initMultList();
                         int ingrSize;
                         List<String> words = new ArrayList<>();
 
@@ -215,14 +273,14 @@ public class CraftCommand extends Command {
                             ingrSize = splitIngridients.size();
                             words.addAll(splitIngridients);
                             words.add(td.last().text().trim());
-                            itemName = getString(basePicURL, guildDir, td, itemImages, itemMult, words);
+                            itemName = getString(basePicURL, td, itemImages, itemMult, itemMultNum, words, cnt);
                         } else if (itemType.trim().equalsIgnoreCase("Crafting Recipes with Tools")) {
 
                             List<String> splitIngridients = Arrays.asList(td.first().text().split("\\+ "));
                             ingrSize = splitIngridients.size();
                             words.addAll(splitIngridients);
                             words.add(td.get(1).text().trim());
-                            itemName = getString(basePicURL, guildDir, td, itemImages, itemMult, words);
+                            itemName = getString(basePicURL, td, itemImages, itemMult, itemMultNum, words, cnt);
                         } else if (itemType.trim().equalsIgnoreCase("Forging Items") ||
                                 itemType.trim().equalsIgnoreCase("Ingredient Extraction") ||
                                 itemType.trim().equalsIgnoreCase("Distillation")) {
@@ -231,25 +289,24 @@ public class CraftCommand extends Command {
                             String process = td.select("center").first().text();
 
                             words.add(ingrUsed);
-                            itemName = getString(basePicURL, guildDir, td, itemImages, itemMult, words);
+                            itemName = getString(basePicURL, td, itemImages, itemMult, itemMultNum, words, cnt);
                             words.add(process);
 
                             ingrSize = 1;
                         } else {
                             return;
                         }
-                        itemImage.add(CraftImageUtil.getCompleted(ingrSize, itemImages, itemMult, words, itemType.trim(), itemName));
                         itemDesc = "How to Craft " + itemName;
 
                         em.addField("Item Name", itemName, true);
                         em.addField("Craft Type", itemType, true);
                         em.setDescription(itemDesc);
 
-                        File f = itemImage.get(0);
+                        File f = CraftImageUtil.getCompleted(ingrSize, itemImages, itemMult, words, itemType.trim(), itemName);
                         Message image = Cubic.getJDA().getTextChannelById("740309750369091796").sendFile(f, URLEncoder.encode(f.getName(), "utf-8")).complete();
-
+                        f.delete();
                         em.setImage(image.getAttachments().get(0).getUrl());
-                        Item item = new Item(itemName, itemType, itemDesc, f);
+                        Item item = new Item(itemName, itemType.trim(), itemDesc, ingrSize, itemImages, itemMultNum, words);
                         imgCache.put(itemName.trim(), item);
                         msg.editMessage(event.getAuthor().getAsMention()).queue();
                         msg.editMessage(em.build()).queue();
@@ -262,12 +319,12 @@ public class CraftCommand extends Command {
                 msg.editMessage(em.build()).queue();
             } else {
                 final Map<Integer, List<String>> paginatedCommands = partition(suggestionList, 5);
-                buildMenu(event, paginatedCommands, 1, msg);
+                buildMenu(event, cnt, paginatedCommands, 1, msg);
             }
         }
     }
 
-    private void buildMenu(CommandEvent event, Map<Integer, List<String>> suggestions, int pageNum, Message m){
+    private void buildMenu(CommandEvent event, int cnt, Map<Integer, List<String>> suggestions, int pageNum, Message m){
         StringBuilder sb = new StringBuilder();
         for(String s : suggestions.get(pageNum-1)) sb.append(s).append("\n");
         ButtonMenu.Builder bm = new ButtonMenu.Builder()
@@ -280,13 +337,13 @@ public class CraftCommand extends Command {
                 .setAction(v -> {
                     if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":x:")) {
                         Msg.reply(event.getTextChannel(), "Cancelled choosing a crafting recipe.");
-                        m.delete().queue();
+                        if(m.isFromType(ChannelType.TEXT)) m.delete().queue();
                     }
                     else if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":small_red_triangle:")){
-                        buildMenu(event, suggestions, pageNum+1, m);
+                        buildMenu(event, cnt, suggestions, pageNum+1, m);
                     }
                     else if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":small_red_triangle_down:")){
-                        buildMenu(event, suggestions, pageNum-1, m);
+                        buildMenu(event, cnt, suggestions, pageNum-1, m);
                     }
                     else{
                         int choice = emojiToNumber(EmojiParser.parseToAliases(v.getEmoji()));
@@ -295,7 +352,7 @@ public class CraftCommand extends Command {
                         }
                         else {
                             try {
-                                runCommand(suggestions.get(pageNum-1).get(choice-1).replaceAll(":.+?:", "").trim(), m, event.getTextChannel(), event);
+                                runCommand(suggestions.get(pageNum-1).get(choice-1).replaceAll(":.+?:", "").trim(), cnt, m, event.getTextChannel(), event);
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
@@ -330,5 +387,42 @@ public class CraftCommand extends Command {
             }
         }
         bm.build().display(m);
+    }
+
+    private static BufferedImage createMultImage(int count) {
+        String text = NumberFormat.getNumberInstance(Locale.US).format(count) + "x";
+
+        BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = img.createGraphics();
+        Font font = new Font("Arial", Font.BOLD, 16);
+        g2d.setFont(font);
+        FontMetrics fm = g2d.getFontMetrics();
+        int width = fm.stringWidth(text);
+        int height = fm.getHeight();
+        g2d.dispose();
+
+        img = new BufferedImage((int) (width+(0.5*width)), (int) (height+(0.5*height)), BufferedImage.TYPE_INT_ARGB);
+        g2d = img.createGraphics();
+        g2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
+        g2d.setRenderingHint(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_ENABLE);
+        g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+        g2d.setFont(font);
+        g2d.setColor(new Color(95, 95, 95));
+        g2d.fillRoundRect(0, 0, img.getWidth(), img.getHeight(), 25, 25);
+        Stroke oldStroke = g2d.getStroke();
+        g2d.setColor(Color.BLACK);
+        g2d.setStroke(new BasicStroke(1));
+        g2d.drawRoundRect(0, 0, img.getWidth(), img.getHeight(), 25, 25);
+        g2d.setStroke(oldStroke);
+        fm = g2d.getFontMetrics();
+        g2d.setColor(Color.WHITE);
+        g2d.drawString(text, (img.getWidth() - width)/2, (fm.getHeight()));
+        g2d.dispose();
+        return img;
     }
 }

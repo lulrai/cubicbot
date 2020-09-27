@@ -2,189 +2,190 @@ package information;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
+import com.jagrosh.jdautilities.menu.ButtonMenu;
+import com.vdurmont.emoji.EmojiManager;
+import com.vdurmont.emoji.EmojiParser;
+import core.Cubic;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.ChannelType;
+import net.dv8tion.jda.api.entities.Message;
 import utils.Constants;
 import utils.Msg;
 
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class HelpCommand extends Command {
-    private static Map<String, String> settingsHelp = new HashMap<>();
-    private static Map<String, String> cubicHelp = new HashMap<>();
-    private static Map<String, String> normalHelp = new HashMap<>();
-    private static Map<String, String> informativeHelp = new HashMap<>();
-    private static Map<String, String> modHelp = new HashMap<>();
-    private static Map<String, String> adminHelp = new HashMap<>();
-    private static Map<String, String> bingoHelp = new HashMap<>();
-    public HelpCommand() {
+    private static Map<String, EmbedBuilder> helpEmbeds = new HashMap<>();
+    private EventWaiter waiter;
+    /**TODO:
+     * REDO THE ENTIRE COMMAND
+     */
+
+    public HelpCommand(EventWaiter waiter) {
         this.name = "help";
         this.aliases = new String[]{"halp"};
-        this.category = new Category("Informative");
-        this.ownerCommand = false;
-        this.cooldown = 2;
-    }
-
-    private static void settingsHelp() {
-        settingsHelp.put("setmodlog", "Sets the current channel (where the command is used on) as a moderator log channel. Run the command again to remove the channel.");
-        settingsHelp.put("setauction", "Sets the current channel (where the command is used on) as an auction host-able channel. Run the command again to remove the channel.");
-    }
-
-    private static void cubicHelp() {
-        cubicHelp.put("forumrules", "Shows the list of all the forum rules.");
-        cubicHelp.put("gamerules", "Shows the entire list of game rules. (It's really long)");
-        cubicHelp.put("item <itemName>", "Displays info about the provided item name.");
-        cubicHelp.put("craft <itemName>", "Displays info and the crafting process of the provided item name.");
-        cubicHelp.put("news [version_number]", "Provides information about a certain version/update of the game.");
-        cubicHelp.put("staff", "Displays a list of current and retired Cubic Castles Staffs updated from the [Forum Post](http://forums2.cubiccastles.com/index.php?p=/discussion/12/staff-list#latest)");
-        cubicHelp.put("perks [name]", "Displays all the perks available (w/o arguments) or information about the provided perk.");
-        cubicHelp.put("price <itemName>", "Provides the price of the item with the item name provided. Uses [V's Forum Post](https://forums2.cubiccastles.com/index.php?p=/discussion/27821/cubic-castles-prices#latest) for the prices.");
-        cubicHelp.put("oldprice <packName>", "Displays an image of the list of prices taken from the [Superxtreme's Forum Post](http://forums2.cubiccastles.com/index.php?p=/discussion/4169/cubic-castles-prices/p1)");
-        cubicHelp.put("status", "Displays the current information about server status, number of players and current CC time.");
-        cubicHelp.put("profile [@user]", "Displays your own profile or a profile of another user.");
-        cubicHelp.put("profileedit", "Edit your profile to change, add, or remove certain aspects.");
-        cubicHelp.put("auction", "Create an auction with the given information.");
-        cubicHelp.put("bid <auction_post_id> <amount>", "Bids the provided amount to the bid post provided the proper id of the bid.");
-    }
-
-    private static void normalHelp() {
-        normalHelp.put("imgur (imageAttachment)", "Uploads the attached image to imgur and provides you the link to it.");
-    }
-
-    private static void informativeHelp() {
-        informativeHelp.put("help [cmd]", "Displays this message or detail about a certain command if argument is provided.");
-        informativeHelp.put("botinfo", "Displays information about the bot.");
-    }
-
-    private static void modHelp() {
-        modHelp.put("modtext <text>", "Sends a message with the given text as an embed with your role color.");
-        modHelp.put("clear [@user] [num]", "Clears the given amount of messages in the channel with or w/o args.");
-        modHelp.put("mute <@user> <time>", "Mutes the mentioned user in **the channel only** for the provided time, if provided.");
-        modHelp.put("unmute <@user>", "Unmutes a mentioned-muted user.");
-        modHelp.put("poll <topic> | [option1] | [option2]", "Creates a poll with the provided options or just the topic. Separate by using `|`.");
-        modHelp.put("birthday", "Gives an option to get all the recorded birthdays of users in a server or a specific month.");
-        modHelp.put("warn <@user> [reason]", "Warns the user and log it on the modlog channel, if present.\n"
-                + "The warning points work as follows:\n"
-                + "1 warning point  = no consequences\n"
-                + "2 warning points = one day ban\n"
-                + "3 warning points = five day ban\n"
-                + "4 warning points = permanent ban");
-    }
-
-    private static void adminHelp() {
-        adminHelp.put("command <add/remove> <name> [value]", "Allows you to add a command or remove a command.");
-        adminHelp.put("ban <@user> [time]", "Ban the user based on the given time.");
-        adminHelp.put("unban userid", "Unban the provided user's id.");
+        this.category = new Category("Info");
+        this.arguments = "";
+        this.guildOnly = false;
+        this.help = "Displays this message or detail about a certain command.";
+        this.waiter = waiter;
     }
 
     public static void addToHelp() {
-        settingsHelp();
-        cubicHelp();
-        normalHelp();
-        informativeHelp();
-        modHelp();
-        adminHelp();
+        Map<String, ArrayList<Command>> settings = new HashMap<>();
+        settings.put(":gear:", new ArrayList<>());
+        settings.put(":hammer:", new ArrayList<>());
+        settings.put(":robot_face:", new ArrayList<>());
+        settings.put(":question:", new ArrayList<>());
+        settings.put(":computer:", new ArrayList<>());
+        settings.put(":house:", new ArrayList<>());
+        settings.put(":picture_frame:", new ArrayList<>());
+        for(Command command : Cubic.getCommandClient().getCommands()) {
+            if(command.getCategory() == null) continue;
+            String category = command.getCategory().getName();
+            switch (category.toLowerCase()) {
+                case "settings" : {
+                    settings.get(":gear:").add(command);
+                    break;
+                }
+                case "admin" : {
+                    settings.get(":hammer:").add(command);
+                    break;
+                }
+                case "cubic" : {
+                    settings.get(":robot_face:").add(command);
+                    break;
+                }
+                case "info" : {
+                    settings.get(":question:").add(command);
+                    break;
+                }
+                case "moderation" : {
+                    settings.get(":computer:").add(command);
+                    break;
+                }
+                case "normal" : {
+                    settings.get(":house:").add(command);
+                    break;
+                }
+                case "profile" : {
+                    settings.get(":picture_frame:").add(command);
+                    break;
+                }
+            }
+        }
+        for(String emoji : settings.keySet()) {
+            switch(emoji.toLowerCase()) {
+                case ":gear:" : { helpEmbeds.put(emoji, commandsToString(EmojiParser.parseToUnicode(":gear:")+" Settings",
+                        "Configuring the settings for this guild/server requires `Administrator` permissions.",
+                        settings.get(":gear:"))); break; }
+                case ":hammer:" : { helpEmbeds.put(emoji, commandsToString(EmojiParser.parseToUnicode(":hammer:")+" Administrator",
+                        "Requires `Administrator` permission for the user to be recognized as an administrator and use these commands.",
+                        settings.get(":hammer:"))); break; }
+                case ":robot_face:" : { helpEmbeds.put(emoji, commandsToString(EmojiParser.parseToUnicode(":robot_face:")+" Cubic Castles",
+                        "Commands for cubic castles related things such as crafting items, checking status, and looking up items.",
+                        settings.get(":robot_face:"))); break; }
+                case ":question:" : { helpEmbeds.put(emoji, commandsToString(EmojiParser.parseToUnicode(":question:")+" Informative",
+                        "Useful commands for you to use for various purposes to get more information about certain stuffs.",
+                        settings.get(":question:"))); break; }
+                case ":computer:" : { helpEmbeds.put(emoji, commandsToString(EmojiParser.parseToUnicode(":computer:")+" Moderator",
+                        "Requires `BAN` permission or `MANAGE` permission for the user to be recognized as a moderator.",
+                        settings.get(":computer:"))); break; }
+                case ":house:" : { helpEmbeds.put(emoji, commandsToString(EmojiParser.parseToUnicode(":house:")+" Misc",
+                        "Just some random commands because why not.",
+                        settings.get(":house:"))); break; }
+                case ":picture_frame:" : { helpEmbeds.put(emoji, commandsToString(EmojiParser.parseToUnicode(":picture_frame:")+" Profile",
+                        "Commands related to profile information and other useful features relating to the profile system.",
+                        settings.get(":picture_frame:"))); break; }
+            }
+        }
     }
 
     @Override
-    protected void execute(CommandEvent e) {
+    protected void execute(CommandEvent event) {
+        System.out.println("Here");
         String prefix = Constants.D_PREFIX;
-        EmbedBuilder embed = new EmbedBuilder();
-        String[] args = e.getArgs().split(" ");
-        embed.setColor(Color.CYAN);
-        if (e.getGuild().getMember(e.getJDA().getSelfUser()).hasPermission(Permission.MESSAGE_MANAGE)) {
-            e.getMessage().delete().queue();
+        StringBuilder sb = new StringBuilder();
+        String[] args = event.getArgs().split(" ");
+        Color c = Color.getHSBColor(48, 93, 94);
+        Message displayMessage = event.getChannel().sendMessage(event.getAuthor().getAsMention()).complete();
+        if (event.isFromType(ChannelType.TEXT)){
+            c = event.getMember().getColor();
+            if(event.getGuild().getSelfMember().hasPermission(Permission.MESSAGE_MANAGE)) event.getMessage().delete().queue();
         }
-        if (e.getArgs().isEmpty()) {
-            embed.setThumbnail(e.getGuild().getSelfMember().getUser().getAvatarUrl());
-            embed.setTitle(e.getGuild().getSelfMember().getUser().getName()).setDescription("Made By Raizusekku");
-            embed.addField("More Help", "For more info about the commands, type: " + prefix + "help <cmd_type>", true);
-            embed.addField("Index",
-                    "[] = " + "Optional" + "\n" +
-                            "<> = " + "Required" + "\n", false);
-            embed.addField("Prefix", "`" + prefix + "`", false);
-            embed.addField("Settings Commands", prefix + "help settings", false);
-            embed.addField("Cubic Castles Commands", prefix + "help cubic", false);
-            embed.addField("Fun/Normal Commands", prefix + "help fun/normal", false);
-            embed.addField("Informative Commands", prefix + "help informative", false);
-            embed.addField("Moderator Commands", prefix + "help mod", false);
-            embed.addField("Admin Commands", prefix + "help admin", false);
-            embed.setFooter("Requested by" + " " + e.getAuthor().getName(), e.getAuthor().getAvatarUrl());
-            e.getTextChannel().sendMessage(embed.build()).queue(m -> {
-                ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(1);
-                exec.schedule(() -> m.delete().queue(), 20, TimeUnit.SECONDS);
-            });
+        if (event.getArgs().isEmpty()) {
+            sb.append("**__HELP COMMAND__**").append("\n").append("** **\n");
+            sb.append("Please do not put the, [] = Optional, <> = Required, with the arguments. It will NOT work.").append("\n").append("** **\n");;
+            sb.append("Prefix: `").append(prefix).append("`").append("\n").append("** **\n");
+            sb.append(":gear: Settings Commands").append("\n").append("** **\n");
+            sb.append(":hammer: Administrator Commands").append("\n").append("** **\n");
+            sb.append(":robot: Cubic Castles Commands").append("\n").append("** **\n");
+            sb.append(":question: Informative Commands").append("\n").append("** **\n");
+            sb.append(":computer: Moderator Commands").append("\n").append("** **\n");
+            sb.append(":house: Misc Commands").append("\n").append("** **\n");
+            sb.append(":frame_photo: Profile Commands").append("\n").append("** **\n");
+            sb.append("**Additional Help**").append("\n");
+            sb.append("For more info about the commands, type: `").append(prefix).append("help <commandName>`. NOTE: Do not enter the prefix or the arguments.");
+
+            ButtonMenu.Builder be = new ButtonMenu.Builder()
+                    .setDescription(sb.toString())
+                    .setEventWaiter(waiter)
+                    .addChoice(EmojiManager.getForAlias("gear").getUnicode())
+                    .addChoice(EmojiManager.getForAlias("hammer").getUnicode())
+                    .addChoice(EmojiManager.getForAlias("robot_face").getUnicode())
+                    .addChoice(EmojiManager.getForAlias("question").getUnicode())
+                    .addChoice(EmojiManager.getForAlias("computer").getUnicode())
+                    .addChoice(EmojiManager.getForAlias("house").getUnicode())
+                    .addChoice(EmojiManager.getForAlias("picture_frame").getUnicode())
+                    .addChoice(EmojiManager.getForAlias("x").getUnicode())
+                    .setUsers(event.getAuthor())
+                    .setColor(c)
+                    .setTimeout(1, TimeUnit.MINUTES)
+                    .setAction(em -> {
+                        Color col = Color.CYAN;
+                        if(event.isFromType(ChannelType.TEXT)){
+                            col = event.getMember().getColor();
+                        }
+                        String option = EmojiParser.parseToAliases(em.getEmoji());
+                        if(!helpEmbeds.containsKey(option))
+                        {
+                            displayMessage.editMessage(Msg.createMessage(event.getTextChannel(), Color.RED, "Pick one of the emojis.", "")).queue();
+                            return;
+                        }
+                        EmbedBuilder embed = helpEmbeds.get(option);
+                        embed.setColor(col);
+                        embed.setAuthor(event.getAuthor().getName() + "#" + event.getAuthor().getDiscriminator(), null, event.getAuthor().getEffectiveAvatarUrl());
+                        displayMessage.editMessage(embed.build()).queue();
+                    })
+                    .setFinalAction(me -> {
+                        try {
+                            if(displayMessage.isFromType(ChannelType.TEXT)) displayMessage.clearReactions().queue();
+                        }catch (Exception ignored) { }
+                    });
+            be.build().display(displayMessage);
         } else if (args.length == 1) {
-            String help;
-            help = args[0];
-            switch (help.toLowerCase().trim()) {
-                case "settings": {
-                    embed.setTitle("Settings Commands");
-                    embed.setDescription("Configuring the settings for this guild/server requires `Bot Admin` role or Administrator permissions.");
-                    for (String command : settingsHelp.keySet()) {
-                        embed.addField(command, settingsHelp.get(command), false);
-                    }
-                    break;
-                }
-                case "cubic": {
-                    embed.setTitle("Cubic Castles Commands");
-                    embed.setDescription("Commands for cubic castles related things.");
-                    for (String command : cubicHelp.keySet()) {
-                        embed.addField(command, cubicHelp.get(command), false);
-                    }
-                    break;
-                }
-                case "fun/normal":
-                case "fun":
-                case "normal": {
-                    embed.setTitle("Fun/Normal Commands");
-                    embed.setDescription("Just some fun commands because why not.");
-                    for (String command : normalHelp.keySet()) {
-                        embed.addField(command, normalHelp.get(command), false);
-                    }
-                    break;
-                }
-                case "informative": {
-                    embed.setTitle("Informative Commands");
-                    embed.setDescription("Useful commands for you to use for various purposes.");
-                    for (String command : informativeHelp.keySet()) {
-                        embed.addField(command, informativeHelp.get(command), false);
-                    }
-                    break;
-                }
-                case "mod": {
-                    embed.setTitle("Moderator Commands");
-                    embed.setDescription("Requires `Bot Mod` or `Mod` or `Moderator` role for the user to be recognized as a moderator.");
-                    for (String command : modHelp.keySet()) {
-                        embed.addField(command, modHelp.get(command), false);
-                    }
-                    break;
-                }
-                case "admin": {
-                    embed.setTitle("Administrator Commands");
-                    embed.setDescription("Requires `Bot Admin` or `Admin` or `Administrator` role OR administrator permission for the user to be recognized as an administrator.");
-                    for (String command : adminHelp.keySet()) {
-                        embed.addField(command, adminHelp.get(command), false);
-                    }
-                    break;
-                }
-                default: {
-                    Msg.badTimed(e, "Not a valid parameter.", 10, TimeUnit.SECONDS);
-                    return;
-                }
-            }
-            embed.setFooter("Requested by" + " " + e.getAuthor().getName(), e.getAuthor().getAvatarUrl());
-            e.getTextChannel().sendMessage(embed.build()).queue(m -> {
-                ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(1);
-                exec.schedule(() -> m.delete().queue(), 1, TimeUnit.MINUTES);
-            });
+            displayMessage.editMessage(Msg.createMessage(event.getChannel(), Color.RED, "Currently not supported part of the command. Still working on it..", "")).queue();
         } else {
-            Msg.bad(e, "USAGE" + ": " + Constants.D_PREFIX + "help <cmd_type>");
+            displayMessage.editMessage(Msg.createMessage(event.getChannel(), Color.RED, "USAGE\" + \": \" + Constants.D_PREFIX + \"help <cmdName>", "")).queue();
         }
+    }
+
+    public static EmbedBuilder commandsToString(String title, String description, ArrayList<Command> commands){
+        EmbedBuilder em = new EmbedBuilder();
+        em.setTitle(title + " Commands");
+        em.setColor(Color.getHSBColor(48, 93, 94));
+        em.setDescription(description);
+        for(Command cmd : commands) {
+            em.addField(Constants.D_PREFIX+cmd.getName() + " " + cmd.getArguments(), cmd.getHelp(), false);
+        }
+        em.setFooter("You can type "+Constants.D_PREFIX+"help <commandName> to get more info about the command.");
+        return em;
     }
 
 }

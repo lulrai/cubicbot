@@ -1,8 +1,9 @@
-package adminCommands;
+package settingCommands;
 
 import botOwnerCommands.ExceptionHandler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import net.dv8tion.jda.api.Permission;
 import utils.GlobalErrorLog;
 import utils.Msg;
 
@@ -15,9 +16,11 @@ public class AuctionSet extends Command {
 
     public AuctionSet() {
         this.name = "setauction";
-        this.aliases = new String[]{};
-        this.category = new Category("Administrator");
-        this.ownerCommand = false;
+        this.aliases = new String[]{"sa"};
+        this.arguments = "";
+        this.category = new Category("Settings");
+        this.help = "Sets the current channel (where the command is used on) as an auction host-able channel. Run the command again to remove the channel.";
+        this.guildOnly = true;
     }
 
     public static String getAuctionChannel(CommandEvent event) {

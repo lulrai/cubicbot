@@ -12,8 +12,8 @@ public class GetLog extends Command {
     public GetLog() {
         this.name = "getlog";
         this.aliases = new String[] { "log" };
-        this.category = new Category("Administrator");
-        this.ownerCommand = false;
+        this.category = new Category("Owner");
+        this.ownerCommand = true;
     }
 
     @Override

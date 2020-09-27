@@ -11,8 +11,11 @@ public class BidCommand extends Command {
     public BidCommand() {
         this.name = "bid";
         this.aliases = new String[]{"addbid"};
-        this.category = new Category("Cubic Castles");
-        this.cooldown = 1;
+        this.arguments = "<auction_id> <bid_amount>";
+        this.category = new Category("cubic");
+        this.help = "Bids the provided amount to the bid post provided the proper id of the bid.";
+        this.cooldown = 10;
+        this.cooldownScope = CooldownScope.USER;
         this.guildOnly = true;
     }
 

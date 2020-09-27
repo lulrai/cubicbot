@@ -1,4 +1,4 @@
-package adminCommands;
+package modCommands;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -10,8 +10,9 @@ public class ModText extends Command{
         this.name = "modtext";
         this.aliases = new String[]{"mt"};
         this.arguments = "";
+        this.help = "Sends a message with the given text as an embed with your role color.";
         this.category = new Category("Moderation");
-        this.ownerCommand = false;
+        this.guildOnly = true;
     }
 
     @Override

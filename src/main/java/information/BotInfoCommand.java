@@ -13,9 +13,10 @@ public class BotInfoCommand extends Command {
     public BotInfoCommand() {
         this.name = "botinfo";
         this.aliases = new String[]{"botstats"};
-        this.category = new Category("Informative");
-        this.cooldown = 1;
-        this.guildOnly = true;
+        this.category = new Category("Info");
+        this.arguments = "";
+        this.help = "Displays information about the bot.";
+        this.guildOnly = false;
     }
 
     @Override
@@ -42,7 +43,7 @@ public class BotInfoCommand extends Command {
 
         RuntimeMXBean rb = ManagementFactory.getRuntimeMXBean();
         builder.addField("Uptime:", ConversionUtils.secondsToTime(rb.getUptime() / 1000), true);
-        event.getTextChannel().sendMessage(builder.build()).complete();
+        event.getChannel().sendMessage(builder.build()).complete();
     }
 
 }

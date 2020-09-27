@@ -12,8 +12,10 @@ public class GameRules extends Command {
     public GameRules() {
         this.name = "gamerules";
         this.aliases = new String[]{"gamerule"};
-        this.category = new Category("Cubic Castles");
-        this.ownerCommand = false;
+        this.arguments = "";
+        this.help = "Shows the entire list of game rules. (It's really long)";
+        this.category = new Category("cubic");
+        this.guildOnly = false;
     }
 
     @Override
@@ -45,9 +47,9 @@ public class GameRules extends Command {
 
             em.setFooter("Terms of Service is subject to change.", null);
 
-            event.getTextChannel().sendMessage(em.build()).queue();
+            event.getChannel().sendMessage(em.build()).queue();
         } catch (InsufficientPermissionException ex) {
-            event.getTextChannel().sendMessage(ex.getMessage()).queue();
+            event.getChannel().sendMessage(ex.getMessage()).queue();
         } catch (Exception e) {
             ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "GameRules.java");
         }

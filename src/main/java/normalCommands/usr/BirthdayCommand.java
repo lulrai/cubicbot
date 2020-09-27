@@ -1,4 +1,4 @@
-package cubicCastles.user;
+package normalCommands.usr;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -16,8 +16,6 @@ import utils.Msg;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class BirthdayCommand extends Command {
@@ -26,8 +24,10 @@ public class BirthdayCommand extends Command {
     public BirthdayCommand(EventWaiter waiter){
         this.name = "birthday";
         this.aliases = new String[]{"bd"};
-        this.category = new Category("Normal");
-        this.ownerCommand = false;
+        this.category = new Category("Profile");
+        this.arguments = "";
+        this.help = "Gives an option to get all the recorded birthdays of users in a server or a specific month. (Mod ONLY)";
+        this.guildOnly = true;
         this.waiter = waiter;
     }
 
@@ -54,7 +54,7 @@ public class BirthdayCommand extends Command {
                         case ":one:" : {
                             m.delete().queue();
                             Map<Integer, StringBuilder> map = new LinkedHashMap<>();
-                            for(Qbee qbee : ProfileCommand.qbees) {
+                            for(Qbee qbee : GameProfileCommand.qbees) {
                                 if(qbee.getBirthday() != null) {
                                     if(map.containsKey(qbee.getBirthday().getMonth())) {
                                         Member member = event.getGuild().getMemberById(qbee.getUserID());
@@ -106,7 +106,7 @@ public class BirthdayCommand extends Command {
                                             return;
                                         }
                                         Map<Integer, StringBuilder> map = new LinkedHashMap<>();
-                                        for(Qbee qbee : ProfileCommand.qbees) {
+                                        for(Qbee qbee : GameProfileCommand.qbees) {
                                             if(qbee.getBirthday() != null) {
                                                 if(map.containsKey(qbee.getBirthday().getMonth())) {
                                                     Member member = event.getGuild().getMemberById(qbee.getUserID());

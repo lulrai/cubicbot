@@ -1,4 +1,4 @@
-package adminCommands;
+package settingCommands;
 
 import botOwnerCommands.ExceptionHandler;
 import com.jagrosh.jdautilities.command.Command;
@@ -16,8 +16,10 @@ public class ModLogSet extends Command {
     public ModLogSet() {
         this.name = "setmodlog";
         this.aliases = new String[]{};
-        this.category = new Category("Administrator");
-        this.ownerCommand = false;
+        this.arguments = "";
+        this.category = new Category("Settings");
+        this.help = "Sets the current channel (where the command is used on) as a moderator log channel. Run the command again to remove the channel.";
+        this.guildOnly = true;
     }
 
     public static String getModLogChannel(Guild guild) {

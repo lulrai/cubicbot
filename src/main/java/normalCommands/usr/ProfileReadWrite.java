@@ -1,9 +1,12 @@
-package cubicCastles.user;
+package normalCommands.usr;
 
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.vdurmont.emoji.Emoji;
+import com.vdurmont.emoji.EmojiManager;
+import com.vdurmont.emoji.EmojiParser;
 import core.Cubic;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
@@ -16,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collections;
 
 public class ProfileReadWrite {
@@ -73,27 +77,28 @@ public class ProfileReadWrite {
             return;
         }
         for (String userID : files) {
-            if(!userID.endsWith("-backup.json")){
+            if(!userID.endsWith("-backup.json")) {
                 Qbee qbee = getUser(userID.replaceAll("[^0-9]", ""));
-                int index = Collections.binarySearch(ProfileCommand.qbees, qbee, new Qbee.QbeeSortingComparator());
+                int index = Collections.binarySearch(GameProfileCommand.qbees, qbee, new Qbee.QbeeSortingComparator());
                 if(index < 0) {
                     index = ~index;
-                    ProfileCommand.qbees.add(index, qbee);
+                    GameProfileCommand.qbees.add(index, qbee);
                 }
             }
         }
     }
 
     public static void checkForBirthdays(){
-        for(Qbee q : ProfileCommand.qbees){
+        for(Qbee q : GameProfileCommand.qbees){
             User user = Cubic.getJDA().getUserById(q.getUserID());
-            if(user.getMutualGuilds().size() == 0) return;
+            if(user == null || user.getMutualGuilds().size() == 0) return;
             if(q.getBirthday().getDay() == LocalDate.now().getMonthValue() && q.getBirthday().getMonth() == LocalDate.now().getDayOfMonth()){
                 for(Guild guild : user.getMutualGuilds()){
                     Role birthdayRole = guild.getRoles().parallelStream().filter(r -> r.getName().toLowerCase().contains("birthday")).findFirst().orElse(null);
                     if(birthdayRole == null) return;
-                    if(guild.getMember(Cubic.getJDA().getSelfUser()).canInteract(birthdayRole)) {
+                    if(guild.getMember(Cubic.getJDA().getSelfUser()).canInteract(birthdayRole) && guild.getMember(Cubic.getJDA().getSelfUser()).canInteract(guild.getMember(user))) {
                         guild.addRoleToMember(guild.getMember(user), birthdayRole).queue();
+                        guild.getMember(user).modifyNickname(EmojiManager.getForAlias("birthday") + " " + guild.getMember(user).getEffectiveName() + " " + EmojiManager.getForAlias("birthday")).queue();
                     }
                 }
             }
@@ -101,8 +106,11 @@ public class ProfileReadWrite {
                 for(Guild guild : user.getMutualGuilds()){
                     Role birthdayRole = guild.getRoles().parallelStream().filter(r -> r.getName().toLowerCase().contains("birthday")).findFirst().orElse(null);
                     if(birthdayRole == null) return;
-                    if(guild.getMember(Cubic.getJDA().getSelfUser()).canInteract(birthdayRole)) {
+                    if(guild.getMember(Cubic.getJDA().getSelfUser()).canInteract(birthdayRole)  && guild.getMember(Cubic.getJDA().getSelfUser()).canInteract(guild.getMember(user))) {
                         guild.removeRoleFromMember(guild.getMember(user), birthdayRole).queue();
+                        ArrayList<Emoji> emojis = new ArrayList<>();
+                        emojis.add(EmojiManager.getForAlias("birthday"));
+                        guild.getMember(user).modifyNickname(EmojiParser.removeEmojis(guild.getMember(user).getEffectiveName(), emojis)).queue();
                     }
                 }
             }

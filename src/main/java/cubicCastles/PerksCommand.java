@@ -19,9 +19,10 @@ public class PerksCommand extends Command {
     public PerksCommand() {
         this.name = "perk";
         this.aliases = new String[]{"perks", "perkinfo"};
-        this.arguments = "perkName";
-        this.category = new Category("Cubic Castles");
-        this.ownerCommand = false;
+        this.arguments = "[perkName]";
+        this.category = new Category("cubic");
+        this.help = "Displays all the perks available (w/o arguments) or information about the provided perk (w/ argument).";
+        this.guildOnly = false;
     }
 
     private static String br2nl(String html) {
@@ -85,7 +86,7 @@ public class PerksCommand extends Command {
                 }
 
                 if (perkName.length() == 0) {
-                    Msg.bad(event, "Perk not found. Check all perks using no arguments or `perks` command.");
+                    Msg.bad(event.getChannel(), "Perk not found. Check all perks using no arguments or `perks` command.");
                     return;
                 }
                 em.setTitle("Perk Info");
@@ -94,10 +95,10 @@ public class PerksCommand extends Command {
                 em.setThumbnail(perkImage);
             }
 
-            event.getTextChannel().sendMessage(em.build()).queue();
+            event.getChannel().sendMessage(em.build()).queue();
 
         } catch (InsufficientPermissionException ex) {
-            event.getTextChannel().sendMessage(ex.getMessage()).queue();
+            event.getChannel().sendMessage(ex.getMessage()).queue();
         } catch (Exception e) {
             ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "PerksCommand.java");
         }

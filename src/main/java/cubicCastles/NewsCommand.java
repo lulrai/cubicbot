@@ -17,9 +17,10 @@ public class NewsCommand extends Command {
     public NewsCommand() {
         this.name = "news";
         this.aliases = new String[]{"update", "updates"};
-        this.category = new Category("Cubic Castles");
-        this.ownerCommand = false;
-        this.cooldownScope = CooldownScope.GLOBAL;
+        this.category = new Category("cubic");
+        this.arguments = "[version_id]";
+        this.help = "Provides information about a certain version/update of the game or general/recent update if no args provided.";
+        this.guildOnly = false;
     }
 
     @Override
@@ -86,10 +87,10 @@ public class NewsCommand extends Command {
             }
 
 
-            event.getTextChannel().sendMessage(em.build()).queue();
+            event.getChannel().sendMessage(em.build()).queue();
 
         } catch (InsufficientPermissionException ex) {
-            event.getTextChannel().sendMessage(ex.getMessage()).queue();
+            event.getChannel().sendMessage(ex.getMessage()).queue();
         } catch (Exception e) {
             ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "NewsCommand.java");
         }

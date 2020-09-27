@@ -3,6 +3,7 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
 import utils.Constants;
@@ -18,9 +19,10 @@ public class ClearCommand extends Command {
     public ClearCommand() {
         this.name = "clear";
         this.aliases = new String[]{"clean"};
-        this.arguments = "<@user> <num>";
+        this.arguments = "[@user] <num>";
         this.category = new Category("Moderation");
-        this.ownerCommand = false;
+        this.guildOnly = true;
+        this.help = "Clears the given amount of messages in the channel with or w/o args.";
     }
 
     @Override
@@ -60,12 +62,17 @@ public class ClearCommand extends Command {
                 amt = 100;
                 User u = event.getMessage().getMentionedUsers().get(0);
                 event.getMessage().delete().complete();
-                event.getTextChannel().getHistory().retrievePast(amt).queue(messages -> {
+                MessageHistory mh = event.getTextChannel().getHistory();
+                mh.retrievePast(amt).queue(messages -> {
                     List<Message> toClean = new ArrayList<Message>();
-                    for (Message m : messages) {
-                        if (m.getAuthor().equals(u)) {
-                            toClean.add(m);
+                    while(toClean.size() < amt) {
+                        toClean.clear();
+                        for (Message m : messages) {
+                            if (m.getAuthor().equals(u)) {
+                                toClean.add(m);
+                            }
                         }
+                        messages.addAll(mh.retrievePast(amt).complete());
                     }
                     toClean.remove(event.getMessage());
                     if (toClean.isEmpty()) {
@@ -97,7 +104,8 @@ public class ClearCommand extends Command {
                     return;
                 }
                 event.getMessage().delete().complete();
-                event.getChannel().getHistory().retrievePast(amt).queue(messages -> {
+                MessageHistory mh = event.getTextChannel().getHistory();
+                mh.retrievePast(amt).queue(messages -> {
                     List<Message> toClean = messages;
                     toClean.remove(event.getMessage());
                     if (toClean.isEmpty()) {
@@ -132,12 +140,17 @@ public class ClearCommand extends Command {
                     return;
                 }
                 event.getMessage().delete().complete();
-                event.getTextChannel().getHistory().retrievePast(amt).queue(messages -> {
+                MessageHistory mh = event.getTextChannel().getHistory();
+                mh.retrievePast(amt).queue(messages -> {
                     List<Message> toClean = new ArrayList<Message>();
-                    for (Message m : messages) {
-                        if (m.getAuthor().equals(u)) {
-                            toClean.add(m);
+                    while(toClean.size() < amt) {
+                        toClean.clear();
+                        for (Message m : messages) {
+                            if (m.getAuthor().equals(u)) {
+                                toClean.add(m);
+                            }
                         }
+                        messages.addAll(mh.retrievePast(amt).complete());
                     }
                     toClean.remove(event.getMessage());
                     if (toClean.isEmpty()) {

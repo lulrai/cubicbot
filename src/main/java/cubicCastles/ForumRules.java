@@ -13,8 +13,10 @@ public class ForumRules extends Command {
     public ForumRules() {
         this.name = "forumrules";
         this.aliases = new String[]{"forumrule"};
-        this.category = new Category("Cubic Castles");
-        this.ownerCommand = false;
+        this.arguments = "";
+        this.help = "Shows the list of all the forum rules.";
+        this.category = new Category("cubic");
+        this.guildOnly = false;
     }
 
     @Override
@@ -43,7 +45,7 @@ public class ForumRules extends Command {
             } else {
                 String givenArg = event.getArgs().trim();
                 if (checkAndGetUrl(givenArg).isEmpty()) {
-                    Msg.bad(event, "Invalid type. Please check the types by using .forumrules and make sure that you type in all the letters.");
+                    Msg.bad(event.getChannel(), "Invalid type. Please check the types by using .forumrules and make sure that you type in all the letters.");
                     return;
                 } else {
                     em.setTitle("Rules", "http://forums2.cubiccastles.com/index.php?p=/discussion/8/forum-rules#latest");
@@ -52,9 +54,9 @@ public class ForumRules extends Command {
             }
 
             em.setFooter("Post Created by Horus", null);
-            event.getTextChannel().sendMessage(em.build()).queue();
+            event.getChannel().sendMessage(em.build()).queue();
         } catch (InsufficientPermissionException ex) {
-            event.getTextChannel().sendMessage(ex.getMessage()).queue();
+            event.getChannel().sendMessage(ex.getMessage()).queue();
         } catch (Exception e) {
             ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "ForumRules.java");
         }

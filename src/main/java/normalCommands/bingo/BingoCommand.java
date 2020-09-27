@@ -16,19 +16,22 @@ public class BingoCommand extends Command {
     public BingoCommand() {
         this.name = "card";
         this.aliases = new String[]{"bingocard"};
-        this.category = new Category("Cubic Castles");
+        this.category = new Category("Bingo");
         this.ownerCommand = false;
     }
 
     @Override
     protected void execute(CommandEvent event) {
+        if(event.getGuild().getCategoryById("756887929808224258") == null) return;
+
         boolean isFromBingo = event.getGuild().getCategoryById("756887929808224258").getTextChannels().parallelStream().anyMatch(c -> event.getTextChannel().getId().equals(c.getId()));
         if(!event.getGuild().getId().equals("240614697848537089") && !event.getGuild().getId().equals("705622006652993607") && !isFromBingo) return;
 
         if(!event.getArgs().isEmpty() && (event.getMember().hasPermission(Permission.ADMINISTRATOR) ||
                 (event.getAuthor().getId().equals("169122787099672577")
                         || event.getAuthor().getId().equals("222488511385698304")
-                        || event.getAuthor().getId().equals("195621535703105536")))){
+                        || event.getAuthor().getId().equals("195621535703105536")
+                        || event.getAuthor().getId().equals("643903506750898215")))){
             if(!event.getMessage().getMentionedUsers().isEmpty()){
                 ByteArrayOutputStream os = new ByteArrayOutputStream();
                 try {

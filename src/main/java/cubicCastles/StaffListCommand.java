@@ -16,8 +16,10 @@ public class StaffListCommand extends Command {
     public StaffListCommand() {
         this.name = "staffs";
         this.aliases = new String[]{"staff", "stafflist"};
-        this.category = new Category("Cubic Castles");
-        this.ownerCommand = false;
+        this.category = new Category("cubic");
+        this.arguments = "";
+        this.help = "Displays a list of current and retired Cubic Castles Staffs updated from the [Forum Post](http://forums2.cubiccastles.com/index.php?p=/discussion/12/staff-list#latest).";
+        this.guildOnly = false;
     }
 
     @Override
@@ -83,10 +85,10 @@ public class StaffListCommand extends Command {
            //em.addField("Retired Forum Moderators", retiredForumMods.toString(), true);
             em.addField("Administrators", admins.toString(), true);
 
-            event.getTextChannel().sendMessage(em.build()).queue();
+            event.getChannel().sendMessage(em.build()).queue();
 
         } catch (InsufficientPermissionException ex) {
-            event.getTextChannel().sendMessage(ex.getMessage()).queue();
+            event.getChannel().sendMessage(ex.getMessage()).queue();
         } catch (Exception e) {
             ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "StaffListCommand.java");
         }

@@ -2,10 +2,7 @@ package botOwnerCommands;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import information.AutoUpdatingStatus;
-import net.dv8tion.jda.api.Permission;
 import utils.Msg;
-import utils.UserPermission;
 
 import java.io.File;
 import java.io.IOException;

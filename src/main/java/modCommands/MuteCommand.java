@@ -25,9 +25,10 @@ public class MuteCommand extends Command {
     public MuteCommand() {
         this.name = "mute";
         this.aliases = new String[]{"moot"};
-        this.arguments = "@user";
+        this.arguments = "<@user> [time]";
         this.category = new Category("Moderation");
-        this.ownerCommand = false;
+        this.help = "Mutes the mentioned user throughout all the channels by overriding user permission and for the provided time, if provided.";
+        this.guildOnly = true;
     }
 
     @Override
@@ -37,12 +38,12 @@ public class MuteCommand extends Command {
             Msg.bad(event, "USAGE" + ": " + Constants.D_PREFIX + "mute <@user> <time(s)>");
             return;
         }
-        if (event.getMessage().getMentionedUsers().isEmpty() || event.getMessage().getMentionedUsers() == null) {
+        if (event.getMessage().getMentionedUsers().isEmpty()) {
             ErrorHandling.EMPTY_MENTION_ERROR.error(event);
             return;
         }
         Member m = event.getGuild().getMember(event.getMessage().getMentionedUsers().get(0));
-        Member auth = event.getGuild().getMember(event.getAuthor());
+        Member auth = event.getMember();
         if (UserPermission.isMod(event, event.getAuthor()) && !auth.hasPermission(Permission.MANAGE_PERMISSIONS)) {
             ErrorHandling.USER_PERMISSION_ERROR.error(event);
             return;

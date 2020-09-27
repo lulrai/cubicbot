@@ -1,4 +1,4 @@
-package cubicCastles.user;
+package normalCommands.usr;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -114,6 +114,7 @@ public class Qbee {
                 break;
             }
         }
+        System.out.println(indexToRemove);
         if(indexToRemove == -1) return false;
         this.realms.remove(indexToRemove);
         return true;
@@ -161,7 +162,10 @@ public class Qbee {
 
         @Override
         public int compare(Qbee qbee1, Qbee qbee2) {
-            if(qbee1.getBirthday() == null || qbee2.getBirthday() == null) {
+            if(qbee1.getBirthday() == null) {
+                return 1;
+            }
+            if(qbee2.getBirthday() == null){
                 return -1;
             }
 

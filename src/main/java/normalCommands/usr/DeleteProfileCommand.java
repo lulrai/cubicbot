@@ -1,4 +1,4 @@
-package cubicCastles.user;
+package normalCommands.usr;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -13,7 +13,7 @@ public class DeleteProfileCommand extends Command {
     public DeleteProfileCommand(){
         this.name = "deleteprofile";
         this.aliases = new String[]{"dp"};
-        this.category = new Category("Normal");
+        this.category = new Category("Owner");
         this.ownerCommand = false;
     }
 
@@ -39,12 +39,12 @@ public class DeleteProfileCommand extends Command {
             return;
         }
 
-        boolean isRemoved = ProfileCommand.qbees.removeIf(p -> p.getUserID().equals(u.getId()));
+        boolean isRemoved = GameProfileCommand.qbees.removeIf(p -> p.getUserID().equals(u.getId()));
         if(isRemoved) {
             Qbee qbee = new Qbee(u.getId(), u.getEffectiveAvatarUrl());
-            int index = Collections.binarySearch(ProfileCommand.qbees, qbee, new Qbee.QbeeSortingComparator());
+            int index = Collections.binarySearch(GameProfileCommand.qbees, qbee, new Qbee.QbeeSortingComparator());
             index = ~index;
-            ProfileCommand.qbees.add(index, qbee);
+            GameProfileCommand.qbees.add(index, qbee);
             ProfileReadWrite.updateUser(qbee);
             Msg.reply(event, "Successfully removed the user's profile.");
         }

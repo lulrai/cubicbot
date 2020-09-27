@@ -1,7 +1,9 @@
 package core;
 
-import adminCommands.*;
+import adminCommands.BanCommand;
+import adminCommands.UnbanCommand;
 import botOwnerCommands.*;
+import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandClientBuilder;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import com.jagrosh.jdautilities.examples.command.AboutCommand;
@@ -10,21 +12,19 @@ import cubicCastles.auction.AuctionCommand;
 import cubicCastles.auction.BidCommand;
 import cubicCastles.craftCommands.CraftCommand;
 import cubicCastles.craftCommands.Item;
-import cubicCastles.user.BirthdayCommand;
-import cubicCastles.user.DeleteProfileCommand;
-import cubicCastles.user.ProfileEditCommand;
-import cubicCastles.user.ProfileReadWrite;
 import information.BotInfoCommand;
 import information.HelpCommand;
 import modCommands.*;
 import net.dv8tion.jda.api.*;
 import net.dv8tion.jda.api.entities.Activity;
-import normalCommands.bingo.*;
 import normalCommands.ImgurCommand;
-import cubicCastles.OldPriceCommand;
+import normalCommands.bingo.*;
+import normalCommands.usr.*;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import settingCommands.AuctionSet;
+import settingCommands.ModLogSet;
 import utils.Constants;
 
 import javax.security.auth.login.LoginException;
@@ -34,6 +34,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -41,9 +44,11 @@ import java.util.concurrent.TimeUnit;
 
 public class Cubic {
     private static JDA jda;
+    private static CommandClient commandClient;
 
     public static void main(String[] args) throws LoginException, IllegalArgumentException, InterruptedException {
         BasicConfigurator.configure();
+        System.setProperty("http.agent", "Chrome");
         //Logger.getRootLogger().setLevel(Level.ERROR);
 
         // Initialize bingo cards
@@ -55,10 +60,11 @@ public class Cubic {
         ProfileReadWrite.loadAllUsers();
 
         EventWaiter waiter = new EventWaiter();
+        commandClient = commandClient(waiter).build();
         jda = new JDABuilder(AccountType.BOT)
                 .setToken(Constants.BOT_RELEASE_CODE)
 //                .setToken(Constants.BOT_TEST_CODE)
-                .addEventListeners(commandClient(waiter).build(),waiter)
+                .addEventListeners(commandClient,waiter)
                 .setStatus(OnlineStatus.DO_NOT_DISTURB).build();
         jda.setAutoReconnect(true);
         jda.getPresence().setActivity(Activity.watching("Cubic Castles!"));
@@ -95,15 +101,22 @@ public class Cubic {
     }
 
     private static void autoClearCache() {
+        LocalTime midnight = LocalTime.MIDNIGHT;
+        LocalDate today = LocalDate.now();
+        LocalDateTime todayMidnight = LocalDateTime.of(today, midnight);
+        LocalDateTime tomorrowMidnight = todayMidnight.plusDays(1);
         try {
             ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
             scheduler.scheduleAtFixedRate(() -> {
                 PriceCommand.populatePrices();
                 for (Item i :CraftCommand.imgCache.values()) {
-                    i.getImage().delete();
+                    i.getItemMultNum().clear();
+                    i.getItemImages().clear();
+                    i.getItemCards().clear();
+                    i.getWords().clear();
                 }
                 CraftCommand.imgCache.clear();
-
+                ProfileReadWrite.checkForBirthdays();
                 Path workingDir = Paths.get(System.getProperty("user.dir"));
                 File cacheDir = new File(workingDir.resolve("db/cache/").toUri());
                 if(!cacheDir.exists()) return;
@@ -111,7 +124,7 @@ public class Cubic {
                     if (!file.isDirectory())
                         file.delete();
                 }
-                ProfileReadWrite.checkForBirthdays();
+//            }, LocalDateTime.now().until(tomorrowMidnight, ChronoUnit.SECONDS), 24, TimeUnit.HOURS);
             }, 0, 24, TimeUnit.HOURS);
         } catch (Exception e) {
             e.printStackTrace();
@@ -143,7 +156,7 @@ public class Cubic {
                                 Permission.VOICE_MUTE_OTHERS, Permission.NICKNAME_CHANGE, Permission.NICKNAME_MANAGE),
 
                         //Info
-                        new HelpCommand(),
+                        new HelpCommand(waiter),
                         new BotInfoCommand(),
 
                         //Normal
@@ -165,8 +178,6 @@ public class Cubic {
                         new StaffListCommand(),
                         new PerksCommand(),
                         new StatusCommand(),
-                        new RaffleCommand(),
-                        new ProfileCommand(),
                         new AuctionCommand(waiter),
                         new BidCommand(),
                         new ForumRules(),
@@ -175,7 +186,7 @@ public class Cubic {
 
                         // Profile Commands
                         new ProfileEditCommand(waiter),
-                        new cubicCastles.user.ProfileCommand(),
+                        new GameProfileCommand(),
                         new BirthdayCommand(waiter),
 
                         //Moderation
@@ -203,5 +214,9 @@ public class Cubic {
 
     public static JDA getJDA() {
         return jda;
+    }
+
+    public static CommandClient getCommandClient() {
+        return commandClient;
     }
 }

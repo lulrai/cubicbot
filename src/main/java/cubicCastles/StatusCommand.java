@@ -27,8 +27,10 @@ public class StatusCommand extends Command {
     public StatusCommand() {
         this.name = "status";
         this.aliases = new String[]{"time", "stats"};
-        this.category = new Category("Cubic Castles");
-        this.ownerCommand = false;
+        this.category = new Category("cubic");
+        this.arguments = "";
+        this.help = "Displays the current information about server status, and current CC time.";
+        this.guildOnly = false;
     }
 
     @Override
@@ -89,10 +91,10 @@ public class StatusCommand extends Command {
             }
             em.addField("", sb.toString(), true);
 
-            event.getTextChannel().sendMessage(em.build()).queue();
+            event.getChannel().sendMessage(em.build()).queue();
 
         } catch (InsufficientPermissionException ex) {
-            event.getTextChannel().sendMessage(ex.getMessage()).queue();
+            event.getChannel().sendMessage(ex.getMessage()).queue();
         } catch (Exception e) {
 //            e.printStackTrace();
             ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "StatusCommand.java");

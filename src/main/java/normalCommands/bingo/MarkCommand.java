@@ -20,12 +20,14 @@ public class MarkCommand extends Command {
     public MarkCommand() {
         this.name = "mark";
         this.aliases = new String[]{"m"};
-        this.category = new Category("Normal");
+        this.category = new Category("Bingo");
         this.ownerCommand = false;
     }
 
     @Override
     protected void execute(CommandEvent event) {
+        if(event.getGuild().getCategoryById("756887929808224258") == null) return;
+
         boolean isFromBingo = event.getGuild().getCategoryById("756887929808224258").getTextChannels().parallelStream().anyMatch(c -> event.getTextChannel().getId().equals(c.getId()));
         if(!event.getGuild().getId().equals("240614697848537089") && !event.getGuild().getId().equals("705622006652993607") && !isFromBingo) return;
 

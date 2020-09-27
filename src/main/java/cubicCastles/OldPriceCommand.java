@@ -20,8 +20,10 @@ public class OldPriceCommand extends Command {
     public OldPriceCommand() {
         this.name = "pricepack";
         this.arguments = "itemsType";
-        this.category = new Category("Cubic Castles");
-        this.ownerCommand = false;
+        this.category = new Category("cubic");
+        this.arguments = "[pack_name]";
+        this.help = "Displays an image of the list of prices taken from the [Superxtreme's Forum Post](http://forums2.cubiccastles.com/index.php?p=/discussion/4169/cubic-castles-prices/p1) given the proper argument for a pack.";
+        this.guildOnly = false;
     }
 
     @Override
@@ -100,7 +102,7 @@ public class OldPriceCommand extends Command {
             msg.editMessage(em.build()).queue();
 
         } catch (InsufficientPermissionException ex) {
-            event.getTextChannel().sendMessage(ex.getMessage()).queue();
+            event.getChannel().sendMessage(ex.getMessage()).queue();
         } catch (Exception e) {
             ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "PriceCommand.java");
         }

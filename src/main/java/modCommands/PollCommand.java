@@ -14,7 +14,8 @@ public class PollCommand extends Command {
         this.aliases = new String[]{"polls"};
         this.arguments = "<topic> | [option1] | [option2]..";
         this.category = new Category("Moderation");
-        this.ownerCommand = false;
+        this.help = "Creates a poll with the provided options or just the topic. Separate by using `|`.";
+        this.guildOnly = false;
     }
 
     private static String formatQuestion(String str) {
@@ -28,13 +29,13 @@ public class PollCommand extends Command {
             return;
         }
         if (event.getArgs().length() < 1) {
-            Msg.bad(event, "Please make sure there is at least one argument.");
+            Msg.bad(event.getChannel(), "Please make sure there is at least one argument.");
             return;
         }
         String arg = event.getMessage().getContentRaw().split(" ", 2)[1].trim();
         String[] parts = arg.split("\\|");
         if (parts.length == 1) {
-            event.getTextChannel().sendMessage(formatQuestion(arg)).queue(m ->
+            event.getChannel().sendMessage(formatQuestion(arg)).queue(m ->
             {
                 m.addReaction("\uD83D\uDC4D").queue();
                 m.addReaction("\uD83D\uDC4E").queue();
@@ -45,7 +46,7 @@ public class PollCommand extends Command {
                 String r = String.copyValueOf(Character.toChars(REGIONAL_A + i - 1));
                 builder.append("\n").append(r).append(" ").append(parts[i].trim());
             }
-            event.getTextChannel().sendMessage(builder.toString()).queue(m ->
+            event.getChannel().sendMessage(builder.toString()).queue(m ->
             {
                 for (int i = 1; i < parts.length; i++)
                     m.addReaction(String.copyValueOf(Character.toChars(REGIONAL_A + i - 1))).queue();

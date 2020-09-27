@@ -9,6 +9,7 @@ import com.vdurmont.emoji.EmojiManager;
 import com.vdurmont.emoji.EmojiParser;
 import cubicCastles.craftCommands.CraftCommand;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.exceptions.ContextException;
@@ -37,10 +38,11 @@ public class ItemCommand extends Command {
     public ItemCommand(EventWaiter waiter) {
         this.name = "item";
         this.aliases = new String[]{"iteminfo", "itm"};
-        this.arguments = "itemName";
-        this.category = new Category("Cubic Castles");
-        this.ownerCommand = false;
+        this.arguments = "<itemName>";
+        this.help = "Displays info about the provided item name.";
+        this.category = new Category("cubic");
         this.waiter = waiter;
+        this.guildOnly = false;
     }
 
     public static String getRarity(String color) {
@@ -79,12 +81,12 @@ public class ItemCommand extends Command {
     @Override
     protected void execute(CommandEvent event) {
         if (event.getArgs().isEmpty()) {
-            Msg.bad(event, "USAGE: " + Constants.D_PREFIX + "item <item_name>");
+            Msg.bad(event.getChannel(), "USAGE: " + Constants.D_PREFIX + "item <item_name>");
             return;
         }
 
         String givenItem = event.getMessage().getContentRaw().split(" ", 2)[1].trim();
-        Message m = event.getTextChannel().sendMessage("Finding item..").complete();
+        Message m = event.getChannel().sendMessage("Finding item..").complete();
         runCommand(givenItem, event, m);
     }
 
@@ -144,7 +146,7 @@ public class ItemCommand extends Command {
                 buildMenu(event, paginatedCommands, 1, m);
             }
         } catch (InsufficientPermissionException ex) {
-            event.getTextChannel().sendMessage(ex.getMessage()).queue();
+            event.getChannel().sendMessage(ex.getMessage()).queue();
         } catch (Exception e) {
             e.printStackTrace();
             ExceptionHandler.handleException(e, event.getMessage().getContentRaw(), "ItemCommand.java");
@@ -164,8 +166,8 @@ public class ItemCommand extends Command {
                 .setColor(Color.orange)
                 .setAction(v -> {
                     if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":x:")) {
-                        Msg.reply(event.getTextChannel(), "Cancelled choosing an item.");
-                        m.delete().queue();
+                        Msg.reply(event.getChannel(), "Cancelled choosing an item.");
+                        if(m.isFromType(ChannelType.TEXT)) m.delete().queue();
                     }
                     else if (EmojiParser.parseToAliases(v.getEmoji()).equalsIgnoreCase(":small_red_triangle:")){
                         buildMenu(event, suggestions, pageNum+1, m);
@@ -176,8 +178,8 @@ public class ItemCommand extends Command {
                     else{
                         int choice = emojiToNumber(EmojiParser.parseToAliases(v.getEmoji()));
                         if(choice == 0){
-                            Msg.bad(event.getTextChannel(), "Invalid choice from the suggestion list.");
-                            m.delete().queue();
+                            Msg.bad(event.getChannel(), "Invalid choice from the suggestion list.");
+                            if(m.isFromType(ChannelType.TEXT)) m.delete().queue();
                         }
                         else {
                             runCommand(suggestions.get(pageNum-1).get(choice-1).replaceAll(":.+?:", "").trim(), event, m);
@@ -186,7 +188,7 @@ public class ItemCommand extends Command {
                 })
                 .setFinalAction(me -> {
                     try {
-                        me.clearReactions().queue();
+                        if(me.isFromType(ChannelType.TEXT)) me.clearReactions().queue();
                     } catch (Exception ignored) {}
                 });
         if(pageNum == 1 && suggestions.size() == 1){

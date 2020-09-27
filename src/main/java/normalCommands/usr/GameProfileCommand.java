@@ -1,70 +1,83 @@
-package cubicCastles.user;
+package normalCommands.usr;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.User;
 import utils.Msg;
 
+import java.awt.*;
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
-public class ProfileCommand extends Command {
+public class GameProfileCommand extends Command {
     public static ArrayList<Qbee> qbees = new ArrayList<>();
 
-    public ProfileCommand() {
+    public GameProfileCommand() {
         this.name = "profile";
         this.aliases = new String[]{"pf", "qbee", "q"};
-        this.category = new Category("Normal");
-        this.ownerCommand = false;
+        this.category = new Category("Profile");
+        this.arguments = "[@user|id]";
+        this.help = "Displays your own profile or a profile of another user.";
+        this.guildOnly = false;
     }
 
     @Override
     protected void execute(CommandEvent event) {
-        Member m = null;
+        User u = null;
         EmbedBuilder em = new EmbedBuilder();
-        if(!event.getMessage().getMentionedMembers().isEmpty()) {
-            m = event.getMessage().getMentionedMembers().get(0);
+        if(!event.getMessage().getMentionedUsers().isEmpty()) {
+            u = event.getMessage().getMentionedUsers().get(0);
         }
         else {
             if(event.getArgs().isEmpty()){
-                m = event.getMember();
+                u = event.getAuthor();
             }
             else{
                 try {
-                    m = event.getGuild().getMemberById(event.getArgs().trim());
+                    u = event.getJDA().retrieveUserById(event.getArgs().trim()).complete();
                 }catch (NumberFormatException ignored){
                 }
             }
         }
 
-        if(m == null) {
-            Msg.bad(event, "Invalid user tagged or invalid user id given.");
+        if(u == null) {
+            Msg.bad(event.getChannel(), "Invalid user tagged or invalid user id given.");
             return;
         }
-        em.setColor(m.getColor());
-        em.setTitle(m.getEffectiveName()+"'s In-Game Profile");
-        em.setThumbnail(m.getUser().getEffectiveAvatarUrl());
-        String id = m.getId();
+        String title;
+        if(event.isFromType(ChannelType.TEXT) && event.getGuild().getMember(u) != null) {
+            em.setColor(event.getGuild().getMember(u).getColor());
+            title = event.getGuild().getMember(u).getEffectiveName()+"'s In-Game Profile";
+        }
+        else{
+            em.setColor(Color.WHITE);
+            title = u.getName()+"'s In-Game Profile";
+        }
+        em.setTitle(title);
+        em.setThumbnail(u.getEffectiveAvatarUrl());
+        String id = u.getId();
 
-        event.getMessage().delete().queue();
+        if(event.isFromType(ChannelType.TEXT)) event.getMessage().delete().queue();
 
-        Qbee qbee = ProfileCommand.qbees.parallelStream().filter(p -> p.getUserID().equals(id)).findFirst().orElse(null);
+        Qbee qbee = GameProfileCommand.qbees.parallelStream().filter(p -> p.getUserID().equals(id)).findFirst().orElse(null);
         if(qbee == null) {
             em.setDescription("No information regarding the user's profile.");
         }
         else {
             boolean hasInfo = false;
-            if(qbee.getForumLink() != null && !qbee.getForumLink().isEmpty()) { em.setTitle(m.getEffectiveName()+"'s In-Game Profile", qbee.getForumLink()); };
+            if(qbee.getForumLink() != null && !qbee.getForumLink().isEmpty()) { em.setTitle(title, qbee.getForumLink()); };
             if(qbee.getAbout() != null && !qbee.getAbout().isEmpty()) { em.setDescription(qbee.getAbout()); hasInfo = true; }
             if(qbee.getGameName() != null && !qbee.getGameName().isEmpty()) { em.addField("In-game Name", qbee.getGameName(), true); hasInfo = true; }
             if(qbee.getLevel() != -1) { em.addField("Level", String.valueOf(qbee.getLevel()), true); hasInfo = true; }
-            if(qbee.getJoinDate() != null && !qbee.getJoinDate().isEmpty()) { em.addField("Join Date", qbee.getJoinDate(), true); hasInfo = true; }
+            if(qbee.getJoinDate() != null && !qbee.getJoinDate().isEmpty()) { em.addField("Join Date (Month-Day-Year)", qbee.getJoinDate(), true); hasInfo = true; }
             if(qbee.getClan() != null && !qbee.getClan().isEmpty()) { em.addField("Clan", qbee.getClan(), true); hasInfo = true; }
             if(qbee.getFavoriteItem() != null && !qbee.getFavoriteItem().isEmpty()) { em.addField("Favorite Item", qbee.getFavoriteItem(), true); hasInfo = true; }
-            if(!getFormattedTimeSinceJoin(qbee).isEmpty()) { em.addField("Time Since Join", getFormattedTimeSinceJoin(qbee), true); hasInfo = true; }
+            if(!getFormattedTimeSinceJoin(qbee).isEmpty()) { em.addField("Joined Since", getFormattedTimeSinceJoin(qbee), true); hasInfo = true; }
             if(qbee.getBirthday() != null) { em.addField("Birthday", Birthday.numToMonth(qbee.getBirthday().getMonth()) + " " + qbee.getBirthday().getDay(), true); hasInfo = true; }
             if(qbee.getProfilePic() != null && !qbee.getProfilePic().isEmpty()) em.setThumbnail(qbee.getProfilePic());
             if(!qbee.getRealms().isEmpty()){
@@ -82,7 +95,7 @@ public class ProfileCommand extends Command {
             if(!hasInfo) em.setDescription("No information regarding the user's profile.");
         }
         em.setFooter("You are responsible for what you put on your profile. Inappropriate profiles can be deleted.");
-        event.getTextChannel().sendMessage(em.build()).queue();
+        event.getChannel().sendMessage(em.build()).queue();
     }
 
     public String getFormattedTimeSinceJoin(Qbee q){

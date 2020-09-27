@@ -5,7 +5,6 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.file.Path;
@@ -155,18 +154,6 @@ class CraftImageUtil {
             backG.setFont(backG.getFont().deriveFont(12f));
             backG.drawImage(images.get(images.size() - 1), resultPos[0], resultPos[1], null);
             for (int i = 0; i < numCards; i++) {
-                Path workingDir = Paths.get(System.getProperty("user.dir"));
-                File cacheDir = new File(workingDir.resolve("db/cache/").toUri());
-                if (!cacheDir.exists()) {
-                    cacheDir.mkdirs();
-                }
-                File outputfile = null;
-                try {
-                    outputfile = new File(cacheDir, URLEncoder.encode(fileName + ".png", "utf-8"));
-                    ImageIO.write(images.get(i), "png", outputfile);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
                 backG.drawImage(images.get(i), cardPos.get(i)[0], cardPos.get(i)[1], null);
             }
 
@@ -234,6 +221,7 @@ class CraftImageUtil {
         } else {
             return null;
         }
+
         File outputfile = null;
         try {
             Path workingDir = Paths.get(System.getProperty("user.dir"));

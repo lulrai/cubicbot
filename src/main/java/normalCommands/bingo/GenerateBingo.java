@@ -32,13 +32,15 @@ public class GenerateBingo extends Command {
     public GenerateBingo(EventWaiter waiter) {
         this.name = "cgen";
         this.aliases = new String[]{"gencard", "generatebingo"};
-        this.category = new Category("Normal");
+        this.category = new Category("Bingo");
         this.ownerCommand = false;
         this.waiter = waiter;
     }
 
     @Override
     protected void execute(CommandEvent event) {
+        if(event.getGuild().getCategoryById("756887929808224258") == null) return;
+
         boolean isFromBingo = event.getGuild().getCategoryById("756887929808224258").getTextChannels().parallelStream().anyMatch(c -> event.getTextChannel().getId().equals(c.getId()));
         if(!event.getGuild().getId().equals("240614697848537089") && !event.getGuild().getId().equals("705622006652993607") && !isFromBingo) return;
 
@@ -49,7 +51,7 @@ public class GenerateBingo extends Command {
 
         User user;
         if((event.getMember().hasPermission(Permission.ADMINISTRATOR) ||
-                event.getAuthor().getId().equals("169122787099672577") || event.getAuthor().getId().equals("222488511385698304") || event.getAuthor().getId().equals("195621535703105536"))
+                event.getAuthor().getId().equals("169122787099672577") || event.getAuthor().getId().equals("222488511385698304") || event.getAuthor().getId().equals("195621535703105536") || event.getAuthor().getId().equals("643903506750898215"))
                 && !event.getMessage().getMentionedUsers().isEmpty()) {
                 user = event.getMessage().getMentionedUsers().get(0);
                 if(bingoBoard.get(user.getId()) != null){

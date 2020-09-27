@@ -18,9 +18,10 @@ public class UnbanCommand extends Command {
     public UnbanCommand() {
         this.name = "unban";
         this.aliases = new String[]{};
-        this.arguments = "@user";
-        this.category = new Category("Administrator");
-        this.ownerCommand = false;
+        this.arguments = "<@user|id>";
+        this.help = "Unban the provided user's id or the tag.";
+        this.category = new Category("Admin");
+        this.guildOnly = true;
     }
 
     @Override
@@ -29,8 +30,15 @@ public class UnbanCommand extends Command {
             Msg.bad(event, "USAGE" + ": " + Constants.D_PREFIX + "unban <userId>");
             return;
         }
-        User target = event.getJDA().getUserById(event.getArgs().trim()) != null ? event.getJDA().getUserById(event.getArgs().trim()) : event.getMessage().getMentionedUsers().get(0);
-        Member auth = event.getGuild().getMember(event.getAuthor());
+        User target;
+        if (event.getMessage().getMentionedUsers().isEmpty()) {
+            target = event.getJDA().getUserById(event.getArgs().trim());
+            if(target == null) { ErrorHandling.EMPTY_MENTION_ERROR.error(event); return; }
+        }
+        else {
+            target = event.getMessage().getMentionedUsers().get(0);
+        }
+        Member auth = event.getMember();
         if (UserPermission.isAdmin(event, event.getAuthor()) && !auth.hasPermission(Permission.BAN_MEMBERS)) {
             ErrorHandling.USER_PERMISSION_ERROR.error(event);
             return;
@@ -48,7 +56,7 @@ public class UnbanCommand extends Command {
         unban(event.getGuild().getMember(target), event.getGuild(), event.getTextChannel(), event.getMessage().getContentRaw());
     }
 
-    public static void unban(Member toMember, Guild guild, TextChannel channel, String command) {
+    static void unban(Member toMember, Guild guild, TextChannel channel, String command) {
         try {
             try {
                 guild.unban(toMember.getUser()).queue(v -> Msg.reply(channel, "@" + toMember.getUser().getName() + " has been unbanned."), t -> Msg.bad(channel, "Failed to unban the user."));
